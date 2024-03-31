@@ -8,32 +8,31 @@ For example:
 
 0. The main branch
 
-Maze2024 (Branch --> Main)\n
-  -- README.md
+Maze2024 (Branch --> Main)\
+  -- README.md\
 
 1. Arya is doing vision:
 
-Maze2024 (Branch -->  Vision)
-  -- README.md
-  -- Vision (folder)
-      -- All the random stuff
-
+Maze2024 (Branch -->  Vision)\
+  -- README.md\
+  -- Vision (folder)\
+      -- All the random stuff\
 
 2. Now Arav wants to do navigation:
 
-Maze2024 (Branch -- Navigation)
-  -- README.md
-  -- Nav (folder)
-     -- All the random stuff
+Maze2024 (Branch -- Navigation)\
+  -- README.md\
+  -- Nav (folder)\
+     -- All the random stuff\
 
 3. Now when we merge to main:
 
-Maze2024 (Branch --> Main)
-  -- README.md
-  -- Nav (folder)
-    -- ...
-  -- Vision (folder)
-    -- ...
+Maze2024 (Branch --> Main)\
+  -- README.md\
+  -- Nav (folder)\
+    -- ...\
+  -- Vision (folder)\
+    -- ...\
 
 YAYAYYA No Merge Conflicts!
 
