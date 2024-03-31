@@ -8,7 +8,7 @@ For example:
 
 0. The main branch
 
-Maze2024 (Branch --> Main)
+Maze2024 (Branch --> Main)\n
   -- README.md
 
 1. Arya is doing vision:
