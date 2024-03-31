@@ -6,26 +6,26 @@ Since ereveryone is doing a different thing programming wise usually, **make you
 
 For example: 
 
-0. The main branch
+### 0) The main branch
 
 Maze2024 (Branch --> Main)\
 &nbsp;&nbsp;-- README.md
 
-1. Arya is doing vision:
+### 1) Arya is doing vision:
 
 Maze2024 (Branch -->  Vision)\
 &nbsp;&nbsp;-- README.md\
 &nbsp;&nbsp;-- Vision (folder)\
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-- All the random stuff
 
-2. Now Arav wants to do navigation:
+### 2) Now Arav wants to do navigation:
 
 Maze2024 (Branch -- Navigation)\
 &nbsp;&nbsp;-- README.md\
 &nbsp;&nbsp;-- Nav (folder)\
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-- All the random stuff
 
-3. Now when we merge to main:
+### 3) Now when we merge to main:
 
 Maze2024 (Branch --> Main)\
 &nbsp;&nbsp;-- README.md\
