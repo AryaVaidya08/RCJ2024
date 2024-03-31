@@ -1,6 +1,6 @@
-## How To Use This Repo
+# How To Use This Repo
 
-# DO NOT CHANGE! (MAKE ANOTHER .md IF YOU WANT TO)
+## DO NOT CHANGE! (MAKE ANOTHER .md IF YOU WANT TO)
 
 Since ereveryone is doing a different thing programming wise usually, **make your own branch and create a different folder for all of your stuff to go under** so it makes merging different branches a peice of cake.
 
@@ -37,4 +37,4 @@ Maze2024 (Branch --> Main)
 
 YAYAYYA No Merge Conflicts!
 
-#### Thanks for listening 
+### Thanks for listening 
