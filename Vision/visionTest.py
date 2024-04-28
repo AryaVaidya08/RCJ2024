@@ -12,7 +12,6 @@ high_yellow = np.array([200, 200, 230])
 while True:
     ret, frame = vid.read()
     hsv = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
-    grey = cv.cvtColor(frame, cv.COLOR_RGB2GRAY)
 
     red_mask = cv.inRange(hsv, low_red, high_red)
     red_result = cv.bitwise_and(frame,frame, mask=red_mask)

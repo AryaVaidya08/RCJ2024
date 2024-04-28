@@ -6,7 +6,7 @@ startTime = int(time.time())
 print(int(startTime))
 
 selectedLetter = "H"
-count = 148
+count = 253
 lastFrameTaken = 0
 
 vid = cv.VideoCapture(0)
@@ -18,10 +18,10 @@ while True:
 
     time1 = int(time.time()) - startTime
 
-    if time1 % 3 == 0 and time1 != lastFrameTaken:
+    if time1 % 1 == 0 and time1 != lastFrameTaken:
         lastFrameTaken = time1
         print(f"Taking picture!{count}")
-        cv.imwrite(f"Vision/images/version1/{selectedLetter}/img{count}.jpg", frame)
+        cv.imwrite(f"Vision/images/version1/Raw/{selectedLetter}/img{count}.jpg", frame)
         count += 1
     
 

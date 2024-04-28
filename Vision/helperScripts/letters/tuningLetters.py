@@ -36,7 +36,7 @@ while True:
     #normal_result = cv2.bitwise_and(img, img, mask=mask)
 
 
-    ret, inverted = cv2.threshold(grey, 127, 255, cv2.THRESH_BINARY) 
+    ret, binary = cv2.threshold(grey, 127, 255, cv2.THRESH_BINARY)
     #grey = cv2.cvtColor(inverted, cv2.COLOR_BGR2GRAY)
     #ret, inverted2 = cv2.threshold(grey, 0, 255, cv2.THRESH_BINARY_INV) 
     # inverted_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
@@ -46,13 +46,11 @@ while True:
 
     #cv2.imshow("thing", cv2.resize(mask_inv, (384, 218)))
     cv2.imshow("Normal", cv2.resize(img, (384, 218)))
-    cv2.imshow("Grey Scale", cv2.resize(grey, (384, 218)))
-    grey.view()
-    #cv2.imshow("Mask", cv2.resize(mask, (384, 218)))
+    cv2.imshow('Binary', cv2.resize(binary, (384, 218))) 
     #cv2.imshow('Inverted', cv2.resize(inverted, (384, 218))) 
     #cv2.imshow('Inverted2', cv2.resize(inverted2, (384, 218))) 
-    cv2.imshow('Masked', cv2.resize(inverted, (384, 218))) 
     #cv2.imshow('Masked2', cv2.resize(output_image, (384, 218))) 
+
 
     #hit or miss
     #rate = 50
