@@ -24,6 +24,14 @@ void setMotors(Motor* _motor1, Motor* _motor2) {
 }
 
 void forward(int rightSpeed, int leftSpeed) {
+  if(rightSpeed > 255)
+    rightSpeed = 255;
+  if(leftSpeed > 255)
+    leftSpeed = 255;
+  if(rightSpeed < -255)
+    rightSpeed = -255;
+  if(leftSpeed < -255)
+    leftSpeed < -255;
   motor->run(rightSpeed);
   motor2->run(leftSpeed);
 }
@@ -50,10 +58,6 @@ void forwardTicks(int speed, int ticks, bool reset = true) {
   }
   stopMotors();
 }
-
-
-
-
 
 void resetServo() {
   myservo.write(175);

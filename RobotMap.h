@@ -25,19 +25,19 @@ const float ENCODERS_TO_CM = 1.f/CM_TO_ENCODERS;
 
 
 const int minspeed = 200;
-const double KP_TURN = 1.5;
+const double KP_TURN = 1.2;
 const double KI_TURN = 0.00003;
 const double KD_TURN = 0.243;
 const int DRIVE_BOOST = 40;
 const int TURN_BOOST = 140;
 const int ALIGN_TURN_BOOST = 70;
 
-Motor motorL(MP2);
-Motor motorR(MP1, true, true);
+Motor motorL(MP3, true, true);
+Motor motorR(MP4);
 
 
 const double DRIVE_STRAIGHT_KP = 3.0;
-const double KP_FORWARD = 1.2;
+const double KP_FORWARD = 2;
 const double KI_FORWARD = 0.003;
 const double KD_FORWARD = 0.01;
 const double SAMPLERATE_DELAY_MS = 10.0;
@@ -45,7 +45,7 @@ const double TIMES_PER_SECOND = 1000.0 / SAMPLERATE_DELAY_MS;
 volatile int32_t global_angle = 0;
 volatile bool restart = false;
 
-const int SPEED = 150;
+const int MAX_SPEED = 150;
 const int ALIGN_SPEED = 85;
 
 

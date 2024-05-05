@@ -5,12 +5,27 @@
 #include <VL53L0X.h>
 #include <Adafruit_BNO055.h>
 #include <utility/imumaths.h>
-
-
-
+#include <LittleVector.h>
 
 using namespace utils;
 using namespace std;
+
+
+class Point2d {
+public:
+  int x;
+  int y;
+  int hash() {
+    return (x << 25 + y << 24) % (int)(1e9 + 7);
+  }
+};
+
+// LittleVector<LittleVector<Point2d>> adj(10);
+
+
+// Vector<Vector<Point2d>> adj(1007);
+
+
 
 class Tile {
 public:
@@ -19,79 +34,79 @@ public:
   Tile* W = NULL;
   Tile* E = NULL;
   bool arrived = false;
-  int x;
-  int y;
+  Point2d point;
 };
 
 class Queue {
 public:
-    struct Node {
-        Tile* data;
-        String path;
-        Node* next;
-    };
+  struct Node {
+    Tile* data;
+    String path;
+    Node* next;
+  };
 
-    Node* front;
-    Node* rear;
+  Node* front;
+  Node* rear;
 
 public:
-    Queue() : front(nullptr), rear(nullptr) {}
+  Queue()
+    : front(nullptr), rear(nullptr) {}
 
-    bool isEmpty() {
-        return front == nullptr;
-    }
+  bool isEmpty() {
+    return front == nullptr;
+  }
 
-    void enqueue(Tile* tile, String path) {
-        Node* newNode = new Node;
-        newNode->data = tile;
-        newNode->path = path;
-        newNode->next = nullptr;
-        if (isEmpty()) {
-            front = rear = newNode;
-        } else {
-            rear->next = newNode;
-            rear = newNode;
-        }
+  void enqueue(Tile* tile, String path) {
+    Node* newNode = new Node;
+    newNode->data = tile;
+    newNode->path = path;
+    newNode->next = nullptr;
+    if (isEmpty()) {
+      front = rear = newNode;
+    } else {
+      rear->next = newNode;
+      rear = newNode;
     }
+  }
 
-    Node* dequeue() {
-        if (isEmpty()) {
-            return nullptr;
-        } else {
-            Node* temp = front;
-            front = front->next;
-            if (front == nullptr) {
-                rear = nullptr;
-            }
-            return temp;
-        }
+  Node* dequeue() {
+    if (isEmpty()) {
+      return nullptr;
+    } else {
+      Node* temp = front;
+      front = front->next;
+      if (front == nullptr) {
+        rear = nullptr;
+      }
+      return temp;
     }
+  }
 };
 
 // Breadth-first search function
 Tile* bfs(Tile* currentTile, String& path) {
-    if (!currentTile) return nullptr;
+  if (!currentTile) return nullptr;
 
-    Queue q;
-    q.enqueue(currentTile, "");
+  Queue q;
+  q.enqueue(currentTile, "");
 
-    while (!q.isEmpty()) {
-        Queue::Node* node = q.dequeue();
-        Tile* tile = node->data;
-        String currentPath = node->path;
+  while (!q.isEmpty()) {
+    Queue::Node* node = q.dequeue();
+    Tile* tile = node->data;
+    String currentPath = node->path;
 
-        if (!tile->arrived) {
-            path = currentPath;
-            return tile;
-        }
-
-        if (tile->N != NULL) q.enqueue(tile->N, currentPath + "N");
-        if (tile->S != NULL) q.enqueue(tile->S, currentPath + "S");
-        if (tile->W != NULL) q.enqueue(tile->W, currentPath + "W");
-        if (tile->E != NULL) q.enqueue(tile->E, currentPath + "E");
+    if (!tile->arrived) {
+      path = currentPath;
+      return tile;
     }
 
-    return nullptr;
+    if (tile->N != NULL) q.enqueue(tile->N, currentPath + "N");
+    if (tile->S != NULL) q.enqueue(tile->S, currentPath + "S");
+    if (tile->W != NULL) q.enqueue(tile->W, currentPath + "W");
+    if (tile->E != NULL) q.enqueue(tile->E, currentPath + "E");
+  }
+
+  return nullptr;
 }
 
 int tofCheck(int id, int maxDist) {
@@ -113,7 +128,7 @@ int currentY = 0;
 
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   myservo.attach(A6);
   myservo2.attach(A7);
 
@@ -139,27 +154,31 @@ void setup() {
       //tof.startContinuous();
     };
   }
-  Tile start;
-  *currentTile = start;
-  if (tofCheck(3, 200)) {  //front
-    Tile newTile;
-    currentTile->N = &newTile;
-  }
-  if (tofCheck(5, 200)) {  //left
-    Tile newTile;
-    currentTile->W = &newTile;
-  }
-  if (tofCheck(1, 200)) {  //right
-    Tile newTile;
-    currentTile->E = &newTile;
-  }
-  if (tofCheck(0, 200)) {  //behind
-    Tile newTile;
-    currentTile->S = &newTile;
-  }
-  currentTile->arrived = true;
-  currentTile->x = currentX;
-  currentTile->y = currentY;
+  // Tile start;
+  // *currentTile = start;
+
+
+  // if (false) {
+  // if (tofCheck(3, 200)) {  //front
+  //   Tile newTile;
+  //   currentTile->N = &newTile;
+  // }
+  // if (tofCheck(5, 200)) {  //left
+  //   Tile newTile;
+  //   currentTile->W = &newTile;
+  // }
+  // if (tofCheck(1, 200)) {  //right
+  //   Tile newTile;
+  //   currentTile->E = &newTile;
+  // }
+  // if (tofCheck(0, 200)) {  //behind
+  //   Tile newTile;
+  //   currentTile->S = &newTile;
+  // }
+  // }
+  // currentTile->arrived = true;
+  // currentTile->point.x = currentX;
+  // currentTile->point.y = currentY;
   Serial.println("complete setup");
 }
 
@@ -168,107 +187,188 @@ void loop() {
   if (tofCheck(3, 200)) {
     Serial.println("Drive");
     straightDrive(30, 150, 2, 60);
-    Tile x = *currentTile->N;
-    currentTile = &x;
-    currentTile->arrived = true;
-    if (orientationData.orientation.x > 350 || orientationData.orientation.x < 10) {
-      currentTile->y++;
-      if (tofCheck(3, 200)) {  //front
-        Tile newTile;
-        currentTile->N = &newTile;
-      }
-      if (tofCheck(5, 200)) {  //left
-        Tile newTile;
-        currentTile->W = &newTile;
-      }
-      if (tofCheck(1, 200)) {  //right
-        Tile newTile;
-        currentTile->E = &newTile;
-      }
-      if (tofCheck(0, 200)) {  //behind
-        Tile newTile;
-        currentTile->S = &newTile;
-      }
-    }
+    // if (orientationData.orientation.x > 350 || orientationData.orientation.x < 10) {
+    //   Tile x = *currentTile->N;
+    //   currentTile = &x;
+    //   currentTile->arrived = true;
 
-    else if (orientationData.orientation.x > 80 && orientationData.orientation.x < 100) {
-      currentTile->x++;
-      if (tofCheck(3, 200)) {  //front
-        Tile newTile;
-        currentTile->E = &newTile;
-      }
-      if (tofCheck(5, 200)) {  //left
-        Tile newTile;
-        currentTile->N = &newTile;
-      }
-      if (tofCheck(1, 200)) {  //right
-        Tile newTile;
-        currentTile->S = &newTile;
-      }
-      if (tofCheck(0, 200)) {  //behind
-        Tile newTile;
-        currentTile->W = &newTile;
-      }
-    }
+    //   currentTile->point.y++;
+    //   if (tofCheck(3, 200)) {  //front
+    //     Tile newTile;
+    //     adj[currentTile->point.hash()].push_back(newTile.point);
+    //     adj[newTile.point.hash()].push_back(currentTile->point);
 
-    if (orientationData.orientation.x > 170 && orientationData.orientation.x < 190) {
-      currentTile->y--;
-      if (tofCheck(3, 200)) {  //front
-        Tile newTile;
-        currentTile->S = &newTile;
-      }
-      if (tofCheck(5, 200)) {  //left
-        Tile newTile;
-        currentTile->E = &newTile;
-      }
-      if (tofCheck(1, 200)) {  //right
-        Tile newTile;
-        currentTile->W = &newTile;
-      }
-      if (tofCheck(0, 200)) {  //behind
-        Tile newTile;
-        currentTile->N = &newTile;
-      }
-    }
+    //     currentTile->N = &newTile;
+    //   }
+    //   if (tofCheck(5, 200)) {  //left
+    //     Tile newTile;
+    //     adj[currentTile->point.hash()].push_back(newTile.point);
+    //     adj[newTile.point.hash()].push_back(currentTile->point);
 
-    if (orientationData.orientation.x > 260 && orientationData.orientation.x < 280) {
-      currentTile->x--;
-      if (tofCheck(3, 200)) {  //front
-        Tile newTile;
-        currentTile->W = &newTile;
-      }
-      if (tofCheck(5, 200)) {  //left
-        Tile newTile;
-        currentTile->S = &newTile;
-      }
-      if (tofCheck(1, 200)) {  //right
-        Tile newTile;
-        currentTile->N = &newTile;
-      }
-      if (tofCheck(0, 200)) {  //behind
-        Tile newTile;
-        currentTile->E = &newTile;
-      }
-    }
+    //     currentTile->W = &newTile;
+    //   }
+    //   if (tofCheck(1, 200)) {  //right
+    //     Tile newTile;
+    //     adj[currentTile->point.hash()].push_back(newTile.point);
+    //     adj[newTile.point.hash()].push_back(currentTile->point);
 
-  } else if (tofCheck(5, 200)) {
-    Serial.println("Left");
-    left(90, 150, true);
-    offset = orientationData.orientation.x;
+    //     currentTile->E = &newTile;
+    //   }
+    //   if (tofCheck(0, 200)) {  //behind
+    //     Tile newTile;
+    //     adj[currentTile->point.hash()].push_back(newTile.point);
+    //     adj[newTile.point.hash()].push_back(currentTile->point);
+    //     currentTile->S = &newTile;
+    //   }
+    // }
+    // else if (orientationData.orientation.x > 80 && orientationData.orientation.x < 100) {
+    //   Tile x = *currentTile->E;
+    //   currentTile = &x;
+    //   currentTile->arrived = true;
+
+    //   currentTile->point.x++;
+    //   if (tofCheck(3, 200)) {  //front
+    //     Tile newTile;
+    //     adj[currentTile->point.hash()].push_back(newTile.point);
+    //     adj[newTile.point.hash()].push_back(currentTile->point);
+    //     currentTile->E = &newTile;
+    //   }
+    //   if (tofCheck(5, 200)) {  //left
+    //     Tile newTile;
+    //     adj[currentTile->point.hash()].push_back(newTile.point);
+    //     adj[newTile.point.hash()].push_back(currentTile->point);
+    //     currentTile->N = &newTile;
+    //   }
+    //   if (tofCheck(1, 200)) {  //right
+    //     Tile newTile;
+    //     adj[currentTile->point.hash()].push_back(newTile.point);
+    //     adj[newTile.point.hash()].push_back(currentTile->point);
+    //     currentTile->S = &newTile;
+    //   }
+    //   if (tofCheck(0, 200)) {  //behind
+    //     Tile newTile;
+    //     adj[currentTile->point.hash()].push_back(newTile.point);
+    //     adj[newTile.point.hash()].push_back(currentTile->point);
+    //     currentTile->W = &newTile;
+    //   }
+    // }
+
+    // if (orientationData.orientation.x > 170 && orientationData.orientation.x < 190) {
+    //   Tile x = *currentTile->S;
+    //   currentTile = &x;
+    //   currentTile->arrived = true;
+
+    //   currentTile->point.y--;
+    //   if (tofCheck(3, 200)) {  //front
+    //     Tile newTile;
+    //     adj[currentTile->point.hash()].push_back(newTile.point);
+    //     adj[newTile.point.hash()].push_back(currentTile->point);
+    //     currentTile->S = &newTile;
+    //   }
+    //   if (tofCheck(5, 200)) {  //left
+    //     Tile newTile;
+    //     adj[currentTile->point.hash()].push_back(newTile.point);
+    //     adj[newTile.point.hash()].push_back(currentTile->point);
+    //     currentTile->E = &newTile;
+    //   }
+    //   if (tofCheck(1, 200)) {  //right
+    //     Tile newTile;
+    //     adj[currentTile->point.hash()].push_back(newTile.point);
+    //     adj[newTile.point.hash()].push_back(currentTile->point);
+    //     currentTile->W = &newTile;
+    //   }
+    //   if (tofCheck(0, 200)) {  //behind
+    //     Tile newTile;
+    //     adj[currentTile->point.hash()].push_back(newTile.point);
+    //     adj[newTile.point.hash()].push_back(currentTile->point);
+    //     currentTile->N = &newTile;
+    //   }
+    // }
+
+    // if (orientationData.orientation.x > 260 && orientationData.orientation.x < 280) {
+    //   Tile x = *currentTile->W;
+    //   currentTile = &x;
+    //   currentTile->arrived = true;
+
+    //   currentTile->point.x--;
+    //   if (tofCheck(3, 200)) {  //front
+    //     Tile newTile;
+    //     adj[currentTile->point.hash()].push_back(newTile.point);
+    //     adj[newTile.point.hash()].push_back(currentTile->point);
+    //     currentTile->W = &newTile;
+    //   }
+    //   if (tofCheck(5, 200)) {  //left
+    //     Tile newTile;
+    //     adj[currentTile->point.hash()].push_back(newTile.point);
+    //     adj[newTile.point.hash()].push_back(currentTile->point);
+
+    //     currentTile->S = &newTile;
+    //   }
+    //   if (tofCheck(1, 200)) {  //right
+    //     Tile newTile;
+    //     adj[currentTile->point.hash()].push_back(newTile.point);
+    //     adj[newTile.point.hash()].push_back(currentTile->point);
+
+    //     currentTile->N = &newTile;
+    //   }
+    //   if (tofCheck(0, 200)) {  //behind
+    //     Tile newTile;
+    //     adj[currentTile->point.hash()].push_back(newTile.point);
+    //     adj[newTile.point.hash()].push_back(currentTile->point);
+    //     currentTile->E = &newTile;
+    //   }
+    // }
+
   } else if (tofCheck(1, 200)) {
+    while (turnCenterCheck()) {
+      motorL.run(150);
+      motorR.run(150);
+    }
+    stopMotors();
     Serial.println("right");
     right(90, 150, true);
     offset = orientationData.orientation.x;
+  } else if (tofCheck(5, 200)) {
+    while (turnCenterCheck()) {
+      motorL.run(150);
+      motorR.run(150);
+    }
+    stopMotors();
+    Serial.println("Left");
+    left(90, 150, true);
+    offset = orientationData.orientation.x;
   } else {
-    String path;
-    Tile* result = bfs(currentTile, path);
+    // String path;
+    // Tile* result = bfs(currentTile, path);
+    // printGraph();
+    // Serial.print("Path: ");
+    // Serial.println(path);
   }
+}
+
+bool turnCenterCheck() {
+  tcaselect(3);
+  return tof.readRangeSingleMillimeters() > 80;
 }
 
 void getTOFValues(int i) {
   tcaselect(i);
   return tof.readRangeSingleMillimeters();
 }
+
+// void printGraph() {
+//   for (int i = 0; i < adj.size(); i++) {
+//     if (adj[i].size() != 0) {
+//       Serial.println(i);
+//       for (int j = 0; j < adj[i].size(); j++) {
+//         Serial.print(adj[i][j].x);
+//         Serial.print(" ");
+//         Serial.println(adj[i][j].y);
+//       }
+//     }
+//   }
+//   Serial.println("");
+// }
 
 bool wallDetected() {
   tcaselect(3);
@@ -308,7 +408,6 @@ void tofCheck() {
   };
 }
 void straightDrive(int cm, int speed, int tolerance, int milDist) {
-
   double tireCircum = 25.4;  //10 inches in cm
   double encPerRev = 368;    //8 ticks per rev on a 1:46 gear ratio
   double multiplier = encPerRev / tireCircum;
@@ -339,7 +438,7 @@ void straightDrive(int cm, int speed, int tolerance, int milDist) {
     } else {
       p_turn = orientationData.orientation.x - offset;
     }
-    utils::forward(PID + p_turn + 40, PID - p_turn + 40);
+    utils::forward(PID - p_turn + 10, PID + p_turn);
     angle = orientationData.orientation.x;
     // Serial.println(orientationData.orientation.x);
   }
@@ -350,7 +449,6 @@ void straightDrive(int cm, int speed, int tolerance, int milDist) {
 
 
 void tofSensorCheck() {
-
   for (int i = TOF_START; i <= TOF_NUMBER; i++) {
     tcaselect(i);
     if (!tof.init()) {

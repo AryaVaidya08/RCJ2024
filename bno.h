@@ -5,6 +5,8 @@
 #include "RobotMap.h"
 #include "utils.h"
 
+using namespace utils;
+
 
 /* This driver reads raw data from the BNO055
 
@@ -69,6 +71,7 @@ int getAngX() {
   delay(BNO055_SAMPLERATE_DELAY_MS);
 }
 
+
 void raw_left(double relative_angle, int speed, bool alignment) {
 
   if (abs(relative_angle) < 1) {
@@ -96,13 +99,21 @@ void raw_left(double relative_angle, int speed, bool alignment) {
 
   double tstart = millis();
 
-#ifndef NO_PID
-  while (abs(orientation - angle) > 6) {
-#else
-  while (orientation > angle) {
-#endif
+  if(angle > 350 && angle < 10)
+    angle = 0;
+  if(angle > 260 && angle < 280)
+    angle = 270;
+  if(angle > 170 && angle < 190)
+    angle = 180;
+  if(angle > 80 && angle < 100) 
+    angle = 90;
 
-    p = ((orientation - angle) / relative_angle)*2;
+#ifndef NO_PID
+  while (abs(orientation - angle) > 0.5) {
+#else
+  while (abs(orientation - angle) > 0.5) {
+#endif
+    p = ((orientation - angle) / relative_angle);
     PID = KP_TURN * p;
     last_error = p;
 
@@ -113,7 +124,7 @@ void raw_left(double relative_angle, int speed, bool alignment) {
       utils::resetTicks();
 
       while (abs(motorL.getTicks()) < 7 * CM_TO_ENCODERS) {
-        utils::forward(0, -255);
+        utils::forward(-255, 0);
       }
 
       utils::stopMotors();
@@ -124,15 +135,15 @@ void raw_left(double relative_angle, int speed, bool alignment) {
 
 
     if (millis() - tstart < 3000) {
-      utils::forward((PID * speed), (PID * -speed));
+      utils::forward((PID * -speed - 40), (PID * speed + 40));
     } else {
-      utils::forward(200, -200);
+      utils::forward(-115, 115);
     }
 #else
     if (millis() - tstart < 3000) {
-      forward(200, -200);
+      forward(-210, 210);
     } else {
-      forward(200, -200);
+      forward(-115, 115);
     }
 #endif
 
@@ -159,7 +170,7 @@ void left(int relative_angle, int speed, bool turn_status = true) {
   delay(100);
   bno.getEvent(&orientationData, Adafruit_BNO055::VECTOR_EULER);
 
-  raw_left(relative_angle, speed, false);
+  raw_left(relative_angle, speed, true);
 
 
 
@@ -201,10 +212,21 @@ void raw_right(double relative_angle, int speed, bool alignment) {
   double last_error = abs((orientationData.orientation.x - angle) / angle);
 
   double tstart = millis();
+
+    if(angle > 350 && angle < 10)
+    angle = 0;
+  if(angle > 260 && angle < 280)
+    angle = 270;
+  if(angle > 170 && angle < 190)
+    angle = 180;
+  if(angle > 80 && angle < 100) 
+    angle = 90;
+
 #ifndef NO_PID
-  while (abs(angle - orientation) > 5) {
+  while (abs(orientation - angle) > 0.5) {
 #else
-  while (orientation < angle) {
+  // while (orientation < angle) {
+  while(abs(orientation - angle) > 0.5) {
 #endif
 
     p = (angle - orientation) / relative_angle;
@@ -218,7 +240,7 @@ void raw_right(double relative_angle, int speed, bool alignment) {
       utils::resetTicks();
 
       while (abs(motorL.getTicks()) < 7 * CM_TO_ENCODERS) {
-        utils::forward(-255, 0);
+        // utils::forward(0, -255);
       }
 
       utils::stopMotors();
@@ -229,16 +251,16 @@ void raw_right(double relative_angle, int speed, bool alignment) {
 
 
     if (millis() - tstart < 3000) {
-      utils::forward((PID * -speed), (PID * speed));
+      utils::forward((PID * speed + 40), (PID * -speed - 40));
     } else {
-      utils::forward(-200, 200);
+      utils::forward(115, -115);
     }
 #else
     if (millis() - tstart < 3000) {
-      forward(-180, 180);
+      forward(210, -210);
      
     } else {
-      forward(-110, 110);
+      forward(115, -115);
 
     }
 #endif
@@ -269,12 +291,12 @@ void right(int relative_angle, int speed, bool turn_status = true) {
   delay(100);
   bno.getEvent(&orientationData, Adafruit_BNO055::VECTOR_EULER);
 
-  raw_right(relative_angle, speed, false);
+  raw_right(relative_angle, speed, true);
 
 
 
   utils::stopMotors();
 
-  // stopMotors();
-  //delay(300);
+  //stopMotors();
+  delay(300);
 }
