@@ -25,7 +25,7 @@ const float ENCODERS_TO_CM = 1.f/CM_TO_ENCODERS;
 
 
 const int minspeed = 200;
-const double KP_TURN = 2;
+const double KP_TURN = 1.5;
 const double KI_TURN = 0.00003;
 const double KD_TURN = 0.243;
 const int DRIVE_BOOST = 40;

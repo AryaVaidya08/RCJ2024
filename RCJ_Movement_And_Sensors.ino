@@ -1,7 +1,7 @@
 #include "Motor.h"
 #include "utils.h"
-#include "timeOfFlight.h"
 #include "oled.h"
+#include "bno.h"
 #include <VL53L0X.h>
 #include <Adafruit_BNO055.h>
 #include <utility/imumaths.h>
@@ -11,117 +11,11 @@
 using namespace utils;
 using namespace std;
 
-class Point2d {
-public:
-  int x;
-  int y;
-  int hash() {
-    return (x << 25 + y << 24) % (int)(1e9 + 7);
-  }
-};
 
 
-
-// LittleVector<LittleVector<Point2d>> adj(10);
-
-
-// Vector<Vector<Point2d>> adj(1007);
-
-
-
-class Tile {
-public:
-  Tile* N = NULL;
-  Tile* S = NULL;
-  Tile* W = NULL;
-  Tile* E = NULL;
-  bool arrived = false;
-  Point2d point;
-};
-
-class Queue {
-public:
-  struct Node {
-    Tile* data;
-    String path;
-    Node* next;
-  };
-
-  Node* front;
-  Node* rear;
-
-public:
-  Queue()
-    : front(nullptr), rear(nullptr) {}
-
-  bool isEmpty() {
-    return front == nullptr;
-  }
-
-  void enqueue(Tile* tile, String path) {
-    Node* newNode = new Node;
-    newNode->data = tile;
-    newNode->path = path;
-    newNode->next = nullptr;
-    if (isEmpty()) {
-      front = rear = newNode;
-    } else {
-      rear->next = newNode;
-      rear = newNode;
-    }
-  }
-
-  Node* dequeue() {
-    if (isEmpty()) {
-      return nullptr;
-    } else {
-      Node* temp = front;
-      front = front->next;
-      if (front == nullptr) {
-        rear = nullptr;
-      }
-      return temp;
-    }
-  }
-};
-
-// Breadth-first search function
-Tile* bfs(Tile* currentTile, String& path) {
-  if (!currentTile) return nullptr;
-
-  Queue q;
-  q.enqueue(currentTile, "");
-
-  while (!q.isEmpty()) {
-    Queue::Node* node = q.dequeue();
-    Tile* tile = node->data;
-    String currentPath = node->path;
-
-    if (!tile->arrived) {
-      path = currentPath;
-      return tile;
-    }
-
-    if (tile->N != NULL) q.enqueue(tile->N, currentPath + "N");
-    if (tile->S != NULL) q.enqueue(tile->S, currentPath + "S");
-    if (tile->W != NULL) q.enqueue(tile->W, currentPath + "W");
-    if (tile->E != NULL) q.enqueue(tile->E, currentPath + "E");
-  }
-
-  return nullptr;
-}
-
-int tofCheck(int id, int maxDist) {
-  tcaselect(id);
-  return tof.readRangeSingleMillimeters() > maxDist;
-}
-
-int setAngles[5] = { 0, 270, 180, 90, 0 };
-int tofSensorValues[4] = { 0, 0, 0, 0 };
 int count = 0;
 int offset = 0;
 
-Tile* currentTile;
 int currentX = 0;
 int currentY = 0;
 
@@ -148,23 +42,23 @@ void setup() {
   // }
   // tofCheck();
   // calibrateTOF();
-  for (int i = TOF_START; i <= 8; i++) {
-    if (true) {
-      tcaselect(i);
-      if (!tof.init()) {
-        Serial.print("Bruh :( sensor ");
-        Serial.print(i);
-        Serial.println(" is broken");
-      } else {
-        Serial.print("Yay! sensor ");
-        Serial.print(i);
-        Serial.println(" is init");
-      }
-      delay(5);
-      //tof.setTimeout(500);
-      //tof.startContinuous();
-    };
-  }
+  // for (int i = TOF_START; i <= 8; i++) {
+  //   if (true) {
+  //     tcaselect(i);
+  //     if (!tof.init()) {
+  //       Serial.print("Bruh :( sensor ");
+  //       Serial.print(i);
+  //       Serial.println(" is broken");
+  //     } else {
+  //       Serial.print("Yay! sensor ");
+  //       Serial.print(i);
+  //       Serial.println(" is init");
+  //     }
+  //     delay(5);
+  //     //tof.setTimeout(500);
+  //     //tof.startContinuous();
+  //   };
+//}
   //Tile start;
   //*currentTile = start;
 
@@ -191,29 +85,31 @@ void setup() {
   // currentTile->point.x = currentX;
   // currentTile->point.y = currentY;
   Serial.println("complete setup");
+
+
 }
 
-void dropRescueKitLeft() {
-  leftServo.write(0);
-  delay(500);
-  leftServo.write(90);
-}
+// void dropRescueKitLeft() {
+//   leftServo.write(0);
+//   delay(500);
+//   leftServo.write(90);
+// }
 
-void dropRescueKitRight() {
-  rightServo.write(0);
-  delay(500);
-  rightServo.write(90);
-}
+// void dropRescueKitRight() {
+//   rightServo.write(0);
+//   delay(500);
+//   rightServo.write(90);
+// }
 
-uint16_t silverVal = 0;
-uint16_t whiteVal = 0;
-uint16_t blueVal = 0;
-uint16_t blackVal = 0;
+// uint16_t silverVal = 0;
+// uint16_t whiteVal = 0;
+// uint16_t blueVal = 0;
+// uint16_t blackVal = 0;
 
-uint16_t silver_white_thresh = (silverVal + whiteVal) / 2;
-uint16_t white_blue_thresh = (whiteVal + blueVal) / 2;
-uint16_t blue_black_thresh = (blueVal + blackVal) / 2;
-uint16_t r, g, b, c;
+// uint16_t silver_white_thresh = (silverVal + whiteVal) / 2;
+// uint16_t white_blue_thresh = (whiteVal + blueVal) / 2;
+// uint16_t blue_black_thresh = (blueVal + blackVal) / 2;
+// uint16_t r, g, b, c;
 
 
 void loop() {
@@ -251,132 +147,132 @@ void loop() {
   // }
 }
 
-bool turnCenterCheck() {
-  tcaselect(0);
-  return tof.readRangeSingleMillimeters() > 80;
-}
-
-void getTOFValues(int i) {
-  tcaselect(i);
-  return tof.readRangeSingleMillimeters();
-}
-
-// void printGraph() {
-//   for (int i = 0; i < adj.size(); i++) {
-//     if (adj[i].size() != 0) {
-//       Serial.println(i);
-//       for (int j = 0; j < adj[i].size(); j++) {
-//         Serial.print(adj[i][j].x);
-//         Serial.print(" ");
-//         Serial.println(adj[i][j].y);
-//       }
-//     }
-//   }
-//   Serial.println("");
+// bool turnCenterCheck() {
+//   tcaselect(0);
+//   return tof.readRangeSingleMillimeters() > 80;
 // }
 
-bool wallDetected() {
-  tcaselect(0);
-  if (tof.readRangeSingleMillimeters() < 20) {
-    return true;
-  } else {
-    return false;
-  }
-}
+// void getTOFValues(int i) {
+//   tcaselect(i);
+//   return tof.readRangeSingleMillimeters();
+// }
 
-void printArray(int array1[]) {
-  Serial.print("[");
-  for (int i = 0; i < 7; i++) {
-    Serial.print(array1[i]);
-    if (i != 6) {
-      Serial.print(", ");
-    }
-  }
-  Serial.println("]");
-}
+// // void printGraph() {
+// //   for (int i = 0; i < adj.size(); i++) {
+// //     if (adj[i].size() != 0) {
+// //       Serial.println(i);
+// //       for (int j = 0; j < adj[i].size(); j++) {
+// //         Serial.print(adj[i][j].x);
+// //         Serial.print(" ");
+// //         Serial.println(adj[i][j].y);
+// //       }
+// //     }
+// //   }
+// //   Serial.println("");
+// // }
 
-void tofCheck() {
-  for (int i = TOF_START; i <= TOF_NUMBER; i++) {
-    tcaselect(i);
-    if (!tof.init()) {
-      Serial.print("Bruh :( sensor ");
-      Serial.print(i);
-      Serial.println(" is broken");
-    } else {
-      Serial.print("Yay! sensor ");
-      Serial.print(i);
-      Serial.println(" is init");
-    }
-    delay(5);
-    //tof.setTimeout(500);
-    //tof.startContinuous();
-  };
-}
-void straightDrive(int cm, int speed, int tolerance, int milDist) {
-  double tireCircum = 25.4;  //10 inches in cm
-  double encPerRev = 368;    //8 ticks per rev on a 1:46 gear ratio
-  double multiplier = encPerRev / tireCircum;
-  int encoders = cm * multiplier;
+// bool wallDetected() {
+//   tcaselect(0);
+//   if (tof.readRangeSingleMillimeters() < 20) {
+//     return true;
+//   } else {
+//     return false;
+//   }
+// }
 
-  // bno.begin(Adafruit_BNO055::);
-  int angle;
-  utils::resetTicks();
-  float p, d, i = 0;
-  float p_turn, d_turn, last_difference = 0;
-  float PID;
-  float last_dist = abs(motorL.getTicks() / abs(encoders));
+// void printArray(int array1[]) {
+//   Serial.print("[");
+//   for (int i = 0; i < 7; i++) {
+//     Serial.print(array1[i]);
+//     if (i != 6) {
+//       Serial.print(", ");
+//     }
+//   }
+//   Serial.println("]");
+// }
 
-  //conversion from cm to encoders
+// void tofCheck() {
+//   for (int i = TOF_START; i <= TOF_NUMBER; i++) {
+//     tcaselect(i);
+//     if (!tof.init()) {
+//       Serial.print("Bruh :( sensor ");
+//       Serial.print(i);
+//       Serial.println(" is broken");
+//     } else {
+//       Serial.print("Yay! sensor ");
+//       Serial.print(i);
+//       Serial.println(" is init");
+//     }
+//     delay(5);
+//     //tof.setTimeout(500);
+//     //tof.startContinuous();
+//   };
+// }
+// void straightDrive(int cm, int speed, int tolerance, int milDist) {
+//   double tireCircum = 25.4;  //10 inches in cm
+//   double encPerRev = 368;    //8 ticks per rev on a 1:46 gear ratio
+//   double multiplier = encPerRev / tireCircum;
+//   int encoders = cm * multiplier;
 
-  while (abs(motorL.getTicks()) < abs(encoders) && abs(motorR.getTicks()) < abs(encoders)) {
+//   // bno.begin(Adafruit_BNO055::);
+//   int angle;
+//   utils::resetTicks();
+//   float p, d, i = 0;
+//   float p_turn, d_turn, last_difference = 0;
+//   float PID;
+//   float last_dist = abs(motorL.getTicks() / abs(encoders));
 
-    // tcs.getRawData(&r, &g, &b, &c);
+//   //conversion from cm to encoders
 
-    // if (c < blue_black_thresh) {
-    //   stopMotors();
-    //   delay(20);
-    //   right(180, 150, true);
-    //   break;
-    // }
+//   while (abs(motorL.getTicks()) < abs(encoders) && abs(motorR.getTicks()) < abs(encoders)) {
 
-    bno.getEvent(&orientationData, Adafruit_BNO055::VECTOR_EULER);
-    int minspeed = 50;
-    p = speed * (float)(abs(encoders) - abs(motorL.getTicks())) / abs(encoders);
-    i = i + p;
-    d = p - last_dist;
-    PID = p * KP_FORWARD + i * KI_FORWARD + d * KD_FORWARD;
+//     // tcs.getRawData(&r, &g, &b, &c);
 
+//     // if (c < blue_black_thresh) {
+//     //   stopMotors();
+//     //   delay(20);
+//     //   right(180, 150, true);
+//     //   break;
+//     // }
 
-    if (orientationData.orientation.x > 180 + offset) {
-      p_turn = orientationData.orientation.x - 360 - offset;
-    } else {
-      p_turn = orientationData.orientation.x - offset;
-    }
-    // Serial.print("Right: ");
-    // Serial.println(PID - p_turn + 10);
-    // Serial.print("Left: ");
-    // Serial.println(PID + p_turn);
-    utils::forward(PID - p_turn + 10, PID + p_turn);
-    angle = orientationData.orientation.x;
-    // Serial.println(orientationData.orientation.x);
-  }
-  utils::stopMotors();
-}
+//     bno.getEvent(&orientationData, Adafruit_BNO055::VECTOR_EULER);
+//     int minspeed = 50;
+//     p = speed * (float)(abs(encoders) - abs(motorL.getTicks())) / abs(encoders);
+//     i = i + p;
+//     d = p - last_dist;
+//     PID = p * KP_FORWARD + i * KI_FORWARD + d * KD_FORWARD;
 
 
+//     if (orientationData.orientation.x > 180 + offset) {
+//       p_turn = orientationData.orientation.x - 360 - offset;
+//     } else {
+//       p_turn = orientationData.orientation.x - offset;
+//     }
+//     // Serial.print("Right: ");
+//     // Serial.println(PID - p_turn + 10);
+//     // Serial.print("Left: ");
+//     // Serial.println(PID + p_turn);
+//     utils::forward(PID - p_turn + 10, PID + p_turn);
+//     angle = orientationData.orientation.x;
+//     // Serial.println(orientationData.orientation.x);
+//   }
+//   utils::stopMotors();
+// }
 
 
-void tofSensorCheck() {
-  for (int i = TOF_START; i <= TOF_NUMBER; i++) {
-    tcaselect(i);
-    if (!tof.init()) {
-      Serial.print("Bruh :( sensor ");
-      Serial.print(i);
-      Serial.println(" is broken");
-    } else {
-      Serial.print("Yay! sensor ");
-      Serial.print(i);
-      Serial.println(" is init");
-    }
-  }
-}
+
+
+// void tofSensorCheck() {
+//   for (int i = TOF_START; i <= TOF_NUMBER; i++) {
+//     tcaselect(i);
+//     if (!tof.init()) {
+//       Serial.print("Bruh :( sensor ");
+//       Serial.print(i);
+//       Serial.println(" is broken");
+//     } else {
+//       Serial.print("Yay! sensor ");
+//       Serial.print(i);
+//       Serial.println(" is init");
+//     }
+//   }
+// }
