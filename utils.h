@@ -61,7 +61,7 @@ void forwardTicks(int speed, int ticks, bool reset = true) {
 
 void resetServo() {
   leftServo.write(90);
-  delay(30);
+  delay(200);
   rightServo.write(90);
   delay(30);
 }

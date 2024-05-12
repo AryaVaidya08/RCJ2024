@@ -5,10 +5,6 @@
 #include <VL53L0X.h>
 #include <Adafruit_BNO055.h>
 #include <utility/imumaths.h>
-#include <LittleVector.h>
-#include <Adafruit_TCS34725.h>
-
-// Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_614MS, TCS34725_GAIN_1X);
 
 
 
@@ -23,6 +19,8 @@ public:
     return (x << 25 + y << 24) % (int)(1e9 + 7);
   }
 };
+
+
 
 // LittleVector<LittleVector<Point2d>> adj(10);
 
@@ -128,15 +126,19 @@ int currentX = 0;
 int currentY = 0;
 
 
-
-
-
 void setup() {
   Serial.begin(115200);
-  leftServo.attach(A13);
-  rightServo.attach(A15);
+  // lcd.init();
+  // lcd.backlight();
+  // lcd.init();
+  // lcd.backlight();
+  // leftServo.attach(7);
+  // rightServo.attach(8);
+  // Serial.println("spinning");
+  // leftServo.write(20);
+  // delay(500);
+  // Serial.println("spun");
 
-  resetServo();
   utils::setMotors(&motorR, &motorL);
   bnoSetup();
   // if (tcs.begin()) {
@@ -163,8 +165,8 @@ void setup() {
       //tof.startContinuous();
     };
   }
-  // Tile start;
-  // *currentTile = start;
+  //Tile start;
+  //*currentTile = start;
 
 
   // if (false) {
@@ -215,206 +217,38 @@ uint16_t r, g, b, c;
 
 
 void loop() {
-
-
-  // int tileColor;  //1 = silver, 2 = white, 3 = blue, 4 = black
-  // tcs.getRawData(&r, &g, &b, &c);
-  // Serial.println(c);
-
-  // if (c < blue_black_thresh) {
-  //   tileColor = 4;
-  // } else if (c < white_blue_thresh) {
-  //   tileColor = 3;
-  // } else if (c < silver_white_thresh) {
-  //   tileColor = 2;
+  right(90, 150, true);
+  delay(1000);
+  // if (tofCheck(0, 200)) {
+  //   Serial.println("Drive");
+  //   straightDrive(30, 150, 2, 60);
+  //   stopMotors();
+  //   delay(500);
+  // } else if (tofCheck(1, 200)) {
+  //   Serial.println("right");
+  //   while (turnCenterCheck()) {
+  //     motorL.run(150);
+  //     motorR.run(150);
+  //   }
+  //   stopMotors();
+  //   right(90, 150, true);
+  //   offset = orientationData.orientation.x;
+  // } else if (tofCheck(5, 200)) {
+  //   while (turnCenterCheck()) {
+  //     motorL.run(150);
+  //     motorR.run(150);
+  //   }
+  //   stopMotors();
+  //   Serial.println("Left");
+  //   left(90, 150, true);
+  //   offset = orientationData.orientation.x;
   // } else {
-  //   tileColor = 1;
+  //   // String path;
+  //   // Tile* result = bfs(currentTile, path);
+  //   // printGraph();
+  //   // Serial.print("Path: ");
+  //   // Serial.println(path);
   // }
-
-
-
-  if (tofCheck(0, 200)) {
-    Serial.println("Drive");
-    straightDrive(30, 150, 2, 60);
-
-    // tcs.getRawData(&r, &g, &b, &c);
-    // Serial.println(c);
-
-    // if(c < blue_black_thresh) {
-    //   tileColor = 4;
-    // }
-    // else if (c < white_blue_thresh) {
-    //   tileColor = 3;
-    // }
-    // else if (c < silver_white_thresh) {
-    //   tileColor = 2;
-    // }
-    // else {
-    //   tileColor = 1;
-    // }
-
-    // if(tileColor == 3) {
-    //   stopMotors();
-    //   delay(5000);
-    // }
-    // if (orientationData.orientation.x > 350 || orientationData.orientation.x < 10) {
-    //   Tile x = *currentTile->N;
-    //   currentTile = &x;
-    //   currentTile->arrived = true;
-
-    //   currentTile->point.y++;
-    //   if (tofCheck(0, 200)) {  //front
-    //     Tile newTile;
-    //     adj[currentTile->point.hash()].push_back(newTile.point);
-    //     adj[newTile.point.hash()].push_back(currentTile->point);
-
-    //     currentTile->N = &newTile;
-    //   }
-    //   if (tofCheck(5, 200)) {  //left
-    //     Tile newTile;
-    //     adj[currentTile->point.hash()].push_back(newTile.point);
-    //     adj[newTile.point.hash()].push_back(currentTile->point);
-
-    //     currentTile->W = &newTile;
-    //   }
-    //   if (tofCheck(1, 200)) {  //right
-    //     Tile newTile;
-    //     adj[currentTile->point.hash()].push_back(newTile.point);
-    //     adj[newTile.point.hash()].push_back(currentTile->point);
-
-    //     currentTile->E = &newTile;
-    //   }
-    //   if (tofCheck(3, 200)) {  //behind
-    //     Tile newTile;
-    //     adj[currentTile->point.hash()].push_back(newTile.point);
-    //     adj[newTile.point.hash()].push_back(currentTile->point);
-    //     currentTile->S = &newTile;
-    //   }
-    // }
-    // else if (orientationData.orientation.x > 80 && orientationData.orientation.x < 100) {
-    //   Tile x = *currentTile->E;
-    //   currentTile = &x;
-    //   currentTile->arrived = true;
-
-    //   currentTile->point.x++;
-    //   if (tofCheck(0, 200)) {  //front
-    //     Tile newTile;
-    //     adj[currentTile->point.hash()].push_back(newTile.point);
-    //     adj[newTile.point.hash()].push_back(currentTile->point);
-    //     currentTile->E = &newTile;
-    //   }
-    //   if (tofCheck(5, 200)) {  //left
-    //     Tile newTile;
-    //     adj[currentTile->point.hash()].push_back(newTile.point);
-    //     adj[newTile.point.hash()].push_back(currentTile->point);
-    //     currentTile->N = &newTile;
-    //   }
-    //   if (tofCheck(1, 200)) {  //right
-    //     Tile newTile;
-    //     adj[currentTile->point.hash()].push_back(newTile.point);
-    //     adj[newTile.point.hash()].push_back(currentTile->point);
-    //     currentTile->S = &newTile;
-    //   }
-    //   if (tofCheck(3, 200)) {  //behind
-    //     Tile newTile;
-    //     adj[currentTile->point.hash()].push_back(newTile.point);
-    //     adj[newTile.point.hash()].push_back(currentTile->point);
-    //     currentTile->W = &newTile;
-    //   }
-    // }
-
-    // if (orientationData.orientation.x > 170 && orientationData.orientation.x < 190) {
-    //   Tile x = *currentTile->S;
-    //   currentTile = &x;
-    //   currentTile->arrived = true;
-
-    //   currentTile->point.y--;
-    //   if (tofCheck(0, 200)) {  //front
-    //     Tile newTile;
-    //     adj[currentTile->point.hash()].push_back(newTile.point);
-    //     adj[newTile.point.hash()].push_back(currentTile->point);
-    //     currentTile->S = &newTile;
-    //   }
-    //   if (tofCheck(5, 200)) {  //left
-    //     Tile newTile;
-    //     adj[currentTile->point.hash()].push_back(newTile.point);
-    //     adj[newTile.point.hash()].push_back(currentTile->point);
-    //     currentTile->E = &newTile;
-    //   }
-    //   if (tofCheck(1, 200)) {  //right
-    //     Tile newTile;
-    //     adj[currentTile->point.hash()].push_back(newTile.point);
-    //     adj[newTile.point.hash()].push_back(currentTile->point);
-    //     currentTile->W = &newTile;
-    //   }
-    //   if (tofCheck(3, 200)) {  //behind
-    //     Tile newTile;
-    //     adj[currentTile->point.hash()].push_back(newTile.point);
-    //     adj[newTile.point.hash()].push_back(currentTile->point);
-    //     currentTile->N = &newTile;
-    //   }
-    // }
-
-    // if (orientationData.orientation.x > 260 && orientationData.orientation.x < 280) {
-    //   Tile x = *currentTile->W;
-    //   currentTile = &x;
-    //   currentTile->arrived = true;
-
-    //   currentTile->point.x--;
-    //   if (tofCheck(0, 200)) {  //front
-    //     Tile newTile;
-    //     adj[currentTile->point.hash()].push_back(newTile.point);
-    //     adj[newTile.point.hash()].push_back(currentTile->point);
-    //     currentTile->W = &newTile;
-    //   }
-    //   if (tofCheck(5, 200)) {  //left
-    //     Tile newTile;
-    //     adj[currentTile->point.hash()].push_back(newTile.point);
-    //     adj[newTile.point.hash()].push_back(currentTile->point);
-
-    //     currentTile->S = &newTile;
-    //   }
-    //   if (tofCheck(1, 200)) {  //right
-    //     Tile newTile;
-    //     adj[currentTile->point.hash()].push_back(newTile.point);
-    //     adj[newTile.point.hash()].push_back(currentTile->point);
-
-    //     currentTile->N = &newTile;
-    //   }
-    //   if (tofCheck(3, 200)) {  //behind
-    //     Tile newTile;
-    //     adj[currentTile->point.hash()].push_back(newTile.point);
-    //     adj[newTile.point.hash()].push_back(currentTile->point);
-    //     currentTile->E = &newTile;
-    //   }
-    // }
-
-  } else if (tofCheck(1, 200)) {
-    Serial.println("right");
-
-    while (turnCenterCheck()) {
-      motorL.run(150);
-      motorR.run(150);
-    }
-    stopMotors();
-    right(90, 150, true);
-    offset = orientationData.orientation.x;
-  } else if (tofCheck(5, 200)) {
-    while (turnCenterCheck()) {
-      motorL.run(150);
-      motorR.run(150);
-    }
-    stopMotors();
-    Serial.println("Left");
-    left(90, 150, true);
-    offset = orientationData.orientation.x;
-  } else {
-    // String path;
-    // Tile* result = bfs(currentTile, path);
-    // printGraph();
-    // Serial.print("Path: ");
-    // Serial.println(path);
-  }
 }
 
 bool turnCenterCheck() {

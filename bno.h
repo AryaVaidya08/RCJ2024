@@ -4,8 +4,12 @@
 #include <utility/imumaths.h>
 #include "RobotMap.h"
 #include "utils.h"
+#include <LiquidCrystal_I2C.h>
 
 using namespace utils;
+// LiquidCrystal_I2C lcd(0x27,  25, 2);
+
+#define NO_PID;
 
 
 /* This driver reads raw data from the BNO055
@@ -97,22 +101,22 @@ void raw_left(double relative_angle, int speed, bool alignment) {
   const double initial_angle = orientationData.orientation.x;
   double orientation = orientationData.orientation.x;
   double angle = orientation - relative_angle;
-  if (angle < -45) {
+  if(angle < -20) {
     angle = 270;
+  } else if (angle < 0) {
+    angle = 0;
   }
-  double last_error = abs((orientationData.orientation.x - angle) / angle);
+
+  double last_error;
+
+  if(!cross_over) {
+  last_error = abs((orientationData.orientation.x - angle) / angle);
+  } else {
+  last_error = abs((orientationData.orientation.x - (angle-360)) / (angle-360)); 
+  }
 
   double tstart = millis();
 
-
-  if (angle >= 225 && angle < 315)
-    angle = 270;
-  else if (angle >= 135 && angle < 225)
-    angle = 180;
-  else if (angle >= 45 && angle < 135)
-    angle = 90;
-  else if (angle >= 315 || angle < 45)
-    angle = 0;
 
   Serial.print("angle: ");
   Serial.println(angle);
@@ -120,11 +124,7 @@ void raw_left(double relative_angle, int speed, bool alignment) {
   Serial.println(orientation);
 
 
-#ifndef NO_PID
-  while (abs(orientation - angle) > 0.5) {
-#else
-  while (abs(orientation - angle) > 0.5) {
-#endif
+  while (abs(orientation - angle) > 2) {
     p = (orientation - angle) / relative_angle;
     last_error = p;
     i = i + last_error;
@@ -135,11 +135,6 @@ void raw_left(double relative_angle, int speed, bool alignment) {
       utils::stopMotors();
       delay(200);
       utils::resetTicks();
-
-      while (abs(motorL.getTicks()) < 7 * CM_TO_ENCODERS) {
-        utils::forward(-255, 0);
-      }
-
       utils::stopMotors();
       delay(200);
       backwards = true;
@@ -151,8 +146,9 @@ void raw_left(double relative_angle, int speed, bool alignment) {
     Serial.print("Left: ");
     Serial.println(PID * speed + 40);
 
+
     if (millis() - tstart < 3000) {
-      utils::forward((PID * -speed - 60), (PID * speed + 60));
+      utils::forward((PID * -speed - 20), (PID * speed + 20));
     } else {
       utils::forward(-115, 115);
     }
@@ -209,108 +205,58 @@ void raw_right(double relative_angle, int speed, bool alignment) {
     return;
   }
 
-#ifndef MOTORSOFF
-
-
   double p, i = 0, d;
   double PID;
   bool cross_over = false;
   bool backwards = false;
   bno.getEvent(&orientationData, Adafruit_BNO055::VECTOR_EULER);
 
-  if (relative_angle + orientationData.orientation.x > 360) {
-    cross_over = true;
-  }
 
 
   const double initial_angle = orientationData.orientation.x;
   double orientation = orientationData.orientation.x;
-  double angle = relative_angle + orientation;
-  if (angle > 315)
+  double angle = orientation + relative_angle;
+  if(angle > 400) {
+    angle = 90;
+  } else if (angle >= 360) {
     angle = 0;
-  double last_error = abs((orientationData.orientation.x - angle) / angle);
+  }
+  
 
   double tstart = millis();
 
-  if (angle >= 250 && angle < 290)
-    angle = 270;
-  else if (angle >= 160 && angle < 200)
-    angle = 180;
-  else if (angle >= 70 && angle < 110)
-    angle = 90;
-  else if (angle >= 340 || angle < 20)
-    angle = 0;
 
   Serial.print("angle: ");
   Serial.println(angle);
   Serial.print("current orientation: ");
   Serial.println(orientation);
+  double last_error = angle - orientationData.orientation.x;
 
-#ifndef NO_PID
-  while (abs(orientation - angle) > 0.5) {
-#else
-  // while (orientation < angle) {
-  while (abs(orientation - angle) > 0.5) {
-#endif
 
-    p = (angle - orientation) / relative_angle;
+  while (abs(orientation - angle) > 2) {
+
+    p = (angle - orientation);
     last_error = p;
     i = i + last_error;
     PID = KP_TURN * p + KI_TURN * i;
 
-#ifndef NO_PID
-    if (millis() - tstart > 5000 && !backwards) {
-      utils::stopMotors();
-      delay(200);
-      utils::resetTicks();
-
-      while (abs(motorL.getTicks()) < 7 * CM_TO_ENCODERS) {
-        // utils::forward(0, -255);
-      }
-
-      utils::stopMotors();
-      delay(200);
-      backwards = true;
-      continue;
-    }
-
-    Serial.print("Right: ");
-    Serial.println(PID * speed + 40);
-    Serial.print("Left: ");
-    Serial.println(PID * -speed - 40);
-    if (millis() - tstart < 3000) {
-      utils::forward((PID * speed + 60), (PID * -speed - 60));
-    } else {
-      utils::forward(115, -115);
-    }
-#else
-    if (millis() - tstart < 3000) {
-      forward(210, -210);
-
-    } else {
-      forward(115, -115);
-    }
-#endif
-
-    if (PID <= 0.01)
-      break;
+    Serial.print("pid: ");
+    Serial.println(PID);
+    // if (millis() - tstart < 3000) {
+    forward((PID + 75), (-1*PID - 75));
+    //   Serial.println("turning");
+    // } else {
+    //   forward(115, -115);
+    // }
 
     bno.getEvent(&orientationData, Adafruit_BNO055::VECTOR_EULER);
-    orientation = cross_over ? orientationData.orientation.x + relative_angle : orientationData.orientation.x;
-    // Serial.print("orientatoin: ");
-    // Serial.println(orientationData.orientation.x);
+    orientation = orientationData.orientation.x;
 
-    if (orientationData.orientation.x < initial_angle) {
-      orientation -= 360;
-    }
-
-    // if (orientationData.orientation.x < 1.0) {
-    //   orientation += 360;
-    // }
   }
+  Serial.println("out");
   utils::stopMotors();
-#endif
 }
+
 
 
 void right(int relative_angle, int speed, bool turn_status = true) {
@@ -320,7 +266,7 @@ void right(int relative_angle, int speed, bool turn_status = true) {
 
   raw_right(relative_angle, speed, true);
 
-
+  Serial.println("done turning");
 
   utils::stopMotors();
 
