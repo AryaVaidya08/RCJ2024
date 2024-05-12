@@ -17,10 +17,9 @@ const motor_pins pi_motor_pins[4] = {{35,34,12,18},{36,37, 8,19},{42,43, 9,3},{A
 
 class Motor{
   public:
-  Motor(int port, bool attachEnc = true, bool reverse = false){
+  Motor(int port, bool reverse = false){
     this->port = port;
-    if(attachEnc)
-      attachEncoder();
+    attachEncoder();
     mult = 1;
     enc_mult[port] = 1;
     if(reverse)
@@ -29,33 +28,33 @@ class Motor{
       enc_mult[port] *= -1;
     }
     boost = 0;
+      
+//   //The PWM frequency is 976 Hz
+// #if defined(__AVR_ATmega32U4__) //MeBaseBoard use ATmega32U4 as MCU
+//   TCCR1A =  _BV(WGM10);
+//   TCCR1B = _BV(CS11) | _BV(CS10) | _BV(WGM12);
 
-      //The PWM frequency is 976 Hz
-#if defined(__AVR_ATmega32U4__) //MeBaseBoard use ATmega32U4 as MCU
-  TCCR1A =  _BV(WGM10);
-  TCCR1B = _BV(CS11) | _BV(CS10) | _BV(WGM12);
+//   TCCR3A = _BV(WGM30);
+//   TCCR3B = _BV(CS31) | _BV(CS30) | _BV(WGM32);
 
-  TCCR3A = _BV(WGM30);
-  TCCR3B = _BV(CS31) | _BV(CS30) | _BV(WGM32);
+//   TCCR4B = _BV(CS42) | _BV(CS41) | _BV(CS40);
+//   TCCR4D = 0;
 
-  TCCR4B = _BV(CS42) | _BV(CS41) | _BV(CS40);
-  TCCR4D = 0;
+// #elif defined(__AVR_ATmega328__) // else ATmega328
 
-#elif defined(__AVR_ATmega328__) // else ATmega328
+//   TCCR1A = _BV(WGM10);
+//   TCCR1B = _BV(CS11) | _BV(CS10) | _BV(WGM12);
 
-  TCCR1A = _BV(WGM10);
-  TCCR1B = _BV(CS11) | _BV(CS10) | _BV(WGM12);
+//   TCCR2A = _BV(WGM21) | _BV(WGM20);
+//   TCCR2B = _BV(CS22);
 
-  TCCR2A = _BV(WGM21) | _BV(WGM20);
-  TCCR2B = _BV(CS22);
+// #elif defined(__AVR_ATmega2560__) //else ATmega2560
+//   TCCR1A = _BV(WGM10);
+//   TCCR1B = _BV(CS11) | _BV(CS10) | _BV(WGM12);
 
-#elif defined(__AVR_ATmega2560__) //else ATmega2560
-  TCCR1A = _BV(WGM10);
-  TCCR1B = _BV(CS11) | _BV(CS10) | _BV(WGM12);
-
-  TCCR2A = _BV(WGM21) | _BV(WGM20);
-  TCCR2B = _BV(CS22);
-#endif
+//   TCCR2A = _BV(WGM21) | _BV(WGM20);
+//   TCCR2B = _BV(CS22);
+// #endif
   }
 
 
@@ -70,7 +69,6 @@ class Motor{
       digitalWrite(pi_motor_pins[port].h1, HIGH);
       analogWrite(pi_motor_pins[port].pwm, speed);
       dir[port] = true;
-      
     }
     if(speed < 0){
       digitalWrite(pi_motor_pins[port].h1, LOW);

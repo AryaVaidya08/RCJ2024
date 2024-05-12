@@ -32,7 +32,7 @@ const int DRIVE_BOOST = 40;
 const int TURN_BOOST = 140;
 const int ALIGN_TURN_BOOST = 70;
 
-Motor motorL(MP3, true, true);
+Motor motorL(MP3, true);
 Motor motorR(MP4);
 
 

@@ -36,6 +36,8 @@ Adafruit_BNO055 bno = Adafruit_BNO055(-1, 0x28, &Wire);
 /**************************************************************************/
 
 
+
+
 void bnoSetup() {
 
   while (!Serial) delay(10);  // wait for serial port to open!
@@ -93,29 +95,40 @@ void raw_left(double relative_angle, int speed, bool alignment) {
 
 
   const double initial_angle = orientationData.orientation.x;
-  double orientation = cross_over ? orientationData.orientation.x + relative_angle : orientationData.orientation.x;
+  double orientation = orientationData.orientation.x;
   double angle = orientation - relative_angle;
+  if (angle < -45) {
+    angle = 270;
+  }
   double last_error = abs((orientationData.orientation.x - angle) / angle);
 
   double tstart = millis();
 
-  if(angle > 350 && angle < 10)
-    angle = 0;
-  if(angle > 260 && angle < 280)
+
+  if (angle >= 225 && angle < 315)
     angle = 270;
-  if(angle > 170 && angle < 190)
+  else if (angle >= 135 && angle < 225)
     angle = 180;
-  if(angle > 80 && angle < 100) 
+  else if (angle >= 45 && angle < 135)
     angle = 90;
+  else if (angle >= 315 || angle < 45)
+    angle = 0;
+
+  Serial.print("angle: ");
+  Serial.println(angle);
+  Serial.print("current orientation: ");
+  Serial.println(orientation);
+
 
 #ifndef NO_PID
   while (abs(orientation - angle) > 0.5) {
 #else
   while (abs(orientation - angle) > 0.5) {
 #endif
-    p = ((orientation - angle) / relative_angle);
-    PID = KP_TURN * p;
+    p = (orientation - angle) / relative_angle;
     last_error = p;
+    i = i + last_error;
+    PID = KP_TURN * p + KI_TURN * i;
 
 #ifndef NO_PID
     if (millis() - tstart > 5000 && !backwards) {
@@ -133,9 +146,13 @@ void raw_left(double relative_angle, int speed, bool alignment) {
       continue;
     }
 
+    Serial.print("Right: ");
+    Serial.println(PID * -speed - 40);
+    Serial.print("Left: ");
+    Serial.println(PID * speed + 40);
 
     if (millis() - tstart < 3000) {
-      utils::forward((PID * -speed - 40), (PID * speed + 40));
+      utils::forward((PID * -speed - 60), (PID * speed + 60));
     } else {
       utils::forward(-115, 115);
     }
@@ -207,31 +224,39 @@ void raw_right(double relative_angle, int speed, bool alignment) {
 
 
   const double initial_angle = orientationData.orientation.x;
-  double orientation = cross_over ? 0 : orientationData.orientation.x;
+  double orientation = orientationData.orientation.x;
   double angle = relative_angle + orientation;
+  if (angle > 315)
+    angle = 0;
   double last_error = abs((orientationData.orientation.x - angle) / angle);
 
   double tstart = millis();
 
-    if(angle > 350 && angle < 10)
-    angle = 0;
-  if(angle > 260 && angle < 280)
+  if (angle >= 250 && angle < 290)
     angle = 270;
-  if(angle > 170 && angle < 190)
+  else if (angle >= 160 && angle < 200)
     angle = 180;
-  if(angle > 80 && angle < 100) 
+  else if (angle >= 70 && angle < 110)
     angle = 90;
+  else if (angle >= 340 || angle < 20)
+    angle = 0;
+
+  Serial.print("angle: ");
+  Serial.println(angle);
+  Serial.print("current orientation: ");
+  Serial.println(orientation);
 
 #ifndef NO_PID
   while (abs(orientation - angle) > 0.5) {
 #else
   // while (orientation < angle) {
-  while(abs(orientation - angle) > 0.5) {
+  while (abs(orientation - angle) > 0.5) {
 #endif
 
     p = (angle - orientation) / relative_angle;
-    PID = KP_TURN * p;
     last_error = p;
+    i = i + last_error;
+    PID = KP_TURN * p + KI_TURN * i;
 
 #ifndef NO_PID
     if (millis() - tstart > 5000 && !backwards) {
@@ -249,19 +274,21 @@ void raw_right(double relative_angle, int speed, bool alignment) {
       continue;
     }
 
-
+    Serial.print("Right: ");
+    Serial.println(PID * speed + 40);
+    Serial.print("Left: ");
+    Serial.println(PID * -speed - 40);
     if (millis() - tstart < 3000) {
-      utils::forward((PID * speed + 40), (PID * -speed - 40));
+      utils::forward((PID * speed + 60), (PID * -speed - 60));
     } else {
       utils::forward(115, -115);
     }
 #else
     if (millis() - tstart < 3000) {
       forward(210, -210);
-     
+
     } else {
       forward(115, -115);
-
     }
 #endif
 

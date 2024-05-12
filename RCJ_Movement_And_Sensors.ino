@@ -6,10 +6,14 @@
 #include <Adafruit_BNO055.h>
 #include <utility/imumaths.h>
 #include <LittleVector.h>
+#include <Adafruit_TCS34725.h>
+
+// Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_614MS, TCS34725_GAIN_1X);
+
+
 
 using namespace utils;
 using namespace std;
-
 
 class Point2d {
 public:
@@ -129,16 +133,21 @@ int currentY = 0;
 
 void setup() {
   Serial.begin(115200);
-  myservo.attach(A6);
-  myservo2.attach(A7);
+  leftServo.attach(A13);
+  rightServo.attach(A15);
 
   resetServo();
   utils::setMotors(&motorR, &motorL);
   bnoSetup();
+  // if (tcs.begin()) {
+  //   Serial.println("Found sensor");
+  // } else {
+  //   Serial.println("No TCS34725 found ... check your connections");
+  // }
   // tofCheck();
   // calibrateTOF();
-  for (int i = TOF_START; i <= TOF_NUMBER; i++) {
-    if ((i == 0 || i == 1 || i == 3 || i == 5)) {
+  for (int i = TOF_START; i <= 8; i++) {
+    if (true) {
       tcaselect(i);
       if (!tof.init()) {
         Serial.print("Bruh :( sensor ");
@@ -159,7 +168,7 @@ void setup() {
 
 
   // if (false) {
-  // if (tofCheck(3, 200)) {  //front
+  // if (tofCheck(0, 200)) {  //front
   //   Tile newTile;
   //   currentTile->N = &newTile;
   // }
@@ -171,7 +180,7 @@ void setup() {
   //   Tile newTile;
   //   currentTile->E = &newTile;
   // }
-  // if (tofCheck(0, 200)) {  //behind
+  // if (tofCheck(3, 200)) {  //behind
   //   Tile newTile;
   //   currentTile->S = &newTile;
   // }
@@ -182,18 +191,79 @@ void setup() {
   Serial.println("complete setup");
 }
 
+void dropRescueKitLeft() {
+  leftServo.write(0);
+  delay(500);
+  leftServo.write(90);
+}
+
+void dropRescueKitRight() {
+  rightServo.write(0);
+  delay(500);
+  rightServo.write(90);
+}
+
+uint16_t silverVal = 0;
+uint16_t whiteVal = 0;
+uint16_t blueVal = 0;
+uint16_t blackVal = 0;
+
+uint16_t silver_white_thresh = (silverVal + whiteVal) / 2;
+uint16_t white_blue_thresh = (whiteVal + blueVal) / 2;
+uint16_t blue_black_thresh = (blueVal + blackVal) / 2;
+uint16_t r, g, b, c;
+
 
 void loop() {
-  if (tofCheck(3, 200)) {
+
+
+  // int tileColor;  //1 = silver, 2 = white, 3 = blue, 4 = black
+  // tcs.getRawData(&r, &g, &b, &c);
+  // Serial.println(c);
+
+  // if (c < blue_black_thresh) {
+  //   tileColor = 4;
+  // } else if (c < white_blue_thresh) {
+  //   tileColor = 3;
+  // } else if (c < silver_white_thresh) {
+  //   tileColor = 2;
+  // } else {
+  //   tileColor = 1;
+  // }
+
+
+
+  if (tofCheck(0, 200)) {
     Serial.println("Drive");
     straightDrive(30, 150, 2, 60);
+
+    // tcs.getRawData(&r, &g, &b, &c);
+    // Serial.println(c);
+
+    // if(c < blue_black_thresh) {
+    //   tileColor = 4;
+    // }
+    // else if (c < white_blue_thresh) {
+    //   tileColor = 3;
+    // }
+    // else if (c < silver_white_thresh) {
+    //   tileColor = 2;
+    // }
+    // else {
+    //   tileColor = 1;
+    // }
+
+    // if(tileColor == 3) {
+    //   stopMotors();
+    //   delay(5000);
+    // }
     // if (orientationData.orientation.x > 350 || orientationData.orientation.x < 10) {
     //   Tile x = *currentTile->N;
     //   currentTile = &x;
     //   currentTile->arrived = true;
 
     //   currentTile->point.y++;
-    //   if (tofCheck(3, 200)) {  //front
+    //   if (tofCheck(0, 200)) {  //front
     //     Tile newTile;
     //     adj[currentTile->point.hash()].push_back(newTile.point);
     //     adj[newTile.point.hash()].push_back(currentTile->point);
@@ -214,7 +284,7 @@ void loop() {
 
     //     currentTile->E = &newTile;
     //   }
-    //   if (tofCheck(0, 200)) {  //behind
+    //   if (tofCheck(3, 200)) {  //behind
     //     Tile newTile;
     //     adj[currentTile->point.hash()].push_back(newTile.point);
     //     adj[newTile.point.hash()].push_back(currentTile->point);
@@ -227,7 +297,7 @@ void loop() {
     //   currentTile->arrived = true;
 
     //   currentTile->point.x++;
-    //   if (tofCheck(3, 200)) {  //front
+    //   if (tofCheck(0, 200)) {  //front
     //     Tile newTile;
     //     adj[currentTile->point.hash()].push_back(newTile.point);
     //     adj[newTile.point.hash()].push_back(currentTile->point);
@@ -245,7 +315,7 @@ void loop() {
     //     adj[newTile.point.hash()].push_back(currentTile->point);
     //     currentTile->S = &newTile;
     //   }
-    //   if (tofCheck(0, 200)) {  //behind
+    //   if (tofCheck(3, 200)) {  //behind
     //     Tile newTile;
     //     adj[currentTile->point.hash()].push_back(newTile.point);
     //     adj[newTile.point.hash()].push_back(currentTile->point);
@@ -259,7 +329,7 @@ void loop() {
     //   currentTile->arrived = true;
 
     //   currentTile->point.y--;
-    //   if (tofCheck(3, 200)) {  //front
+    //   if (tofCheck(0, 200)) {  //front
     //     Tile newTile;
     //     adj[currentTile->point.hash()].push_back(newTile.point);
     //     adj[newTile.point.hash()].push_back(currentTile->point);
@@ -277,7 +347,7 @@ void loop() {
     //     adj[newTile.point.hash()].push_back(currentTile->point);
     //     currentTile->W = &newTile;
     //   }
-    //   if (tofCheck(0, 200)) {  //behind
+    //   if (tofCheck(3, 200)) {  //behind
     //     Tile newTile;
     //     adj[currentTile->point.hash()].push_back(newTile.point);
     //     adj[newTile.point.hash()].push_back(currentTile->point);
@@ -291,7 +361,7 @@ void loop() {
     //   currentTile->arrived = true;
 
     //   currentTile->point.x--;
-    //   if (tofCheck(3, 200)) {  //front
+    //   if (tofCheck(0, 200)) {  //front
     //     Tile newTile;
     //     adj[currentTile->point.hash()].push_back(newTile.point);
     //     adj[newTile.point.hash()].push_back(currentTile->point);
@@ -311,7 +381,7 @@ void loop() {
 
     //     currentTile->N = &newTile;
     //   }
-    //   if (tofCheck(0, 200)) {  //behind
+    //   if (tofCheck(3, 200)) {  //behind
     //     Tile newTile;
     //     adj[currentTile->point.hash()].push_back(newTile.point);
     //     adj[newTile.point.hash()].push_back(currentTile->point);
@@ -320,12 +390,13 @@ void loop() {
     // }
 
   } else if (tofCheck(1, 200)) {
+    Serial.println("right");
+
     while (turnCenterCheck()) {
       motorL.run(150);
       motorR.run(150);
     }
     stopMotors();
-    Serial.println("right");
     right(90, 150, true);
     offset = orientationData.orientation.x;
   } else if (tofCheck(5, 200)) {
@@ -347,7 +418,7 @@ void loop() {
 }
 
 bool turnCenterCheck() {
-  tcaselect(3);
+  tcaselect(0);
   return tof.readRangeSingleMillimeters() > 80;
 }
 
@@ -371,7 +442,7 @@ void getTOFValues(int i) {
 // }
 
 bool wallDetected() {
-  tcaselect(3);
+  tcaselect(0);
   if (tof.readRangeSingleMillimeters() < 20) {
     return true;
   } else {
@@ -425,6 +496,15 @@ void straightDrive(int cm, int speed, int tolerance, int milDist) {
 
   while (abs(motorL.getTicks()) < abs(encoders) && abs(motorR.getTicks()) < abs(encoders)) {
 
+    // tcs.getRawData(&r, &g, &b, &c);
+
+    // if (c < blue_black_thresh) {
+    //   stopMotors();
+    //   delay(20);
+    //   right(180, 150, true);
+    //   break;
+    // }
+
     bno.getEvent(&orientationData, Adafruit_BNO055::VECTOR_EULER);
     int minspeed = 50;
     p = speed * (float)(abs(encoders) - abs(motorL.getTicks())) / abs(encoders);
@@ -438,6 +518,10 @@ void straightDrive(int cm, int speed, int tolerance, int milDist) {
     } else {
       p_turn = orientationData.orientation.x - offset;
     }
+    // Serial.print("Right: ");
+    // Serial.println(PID - p_turn + 10);
+    // Serial.print("Left: ");
+    // Serial.println(PID + p_turn);
     utils::forward(PID - p_turn + 10, PID + p_turn);
     angle = orientationData.orientation.x;
     // Serial.println(orientationData.orientation.x);

@@ -10,8 +10,8 @@ namespace utils {
 
 Motor* motor;
 Motor* motor2;
-Servo myservo;
-Servo myservo2;
+Servo leftServo;
+Servo rightServo;
 int16_t servopin = A6;
 int16_t servopin2 = A7;
 const int num_per_column = 4;
@@ -60,10 +60,10 @@ void forwardTicks(int speed, int ticks, bool reset = true) {
 }
 
 void resetServo() {
-  myservo.write(175);
-  delay(200);
-  myservo2.write(25);
-  delay(200);
+  leftServo.write(90);
+  delay(30);
+  rightServo.write(90);
+  delay(30);
 }
 
 namespace logger {
