@@ -68,14 +68,7 @@ void bnoSetup() {
 
 
 
-
-
-
-
-
-
-
-void raw_right(double relative_angle, int speed, bool alignment) {
+void spinLeft(double relative_angle) {
 
   if (abs(relative_angle) < 1) {
     return;
@@ -83,21 +76,29 @@ void raw_right(double relative_angle, int speed, bool alignment) {
 
   double p, i = 0, d;
   double PID;
-  bool cross_over = false;
-  bool backwards = false;
-  bno.getEvent(&orientationData, Adafruit_BNO055::VECTOR_EULER);
+  bno.getEvent(&bnoInfo, Adafruit_BNO055::VECTOR_EULER);
 
 
 
-  const double initial_angle = orientationData.orientation.x;
-  double orientation = orientationData.orientation.x;
-  double angle = orientation + relative_angle;
-  if(angle > 400) {
-    angle = 90;
-  } else if (angle >= 360) {
+  const double initial_angle = bnoInfo.orientation.x;
+  double orientation = bnoInfo.orientation.x;
+  double angle = orientation - relative_angle;
+  if (angle < -30) {
+    angle = 270;
+  } else if (angle < 0) {
     angle = 0;
   }
-  
+
+  if (angle > 80 && angle < 100) {
+    angle = 90;
+  } else if (angle > 170 && angle < 190) {
+    angle = 180;
+  } else if (angle > 260 && angle < 280) {
+    angle = 270;
+  } else {
+    angle = 0;
+  }
+
 
   double tstart = millis();
 
@@ -106,7 +107,154 @@ void raw_right(double relative_angle, int speed, bool alignment) {
   Serial.println(angle);
   Serial.print("current orientation: ");
   Serial.println(orientation);
-  double last_error = angle - orientationData.orientation.x;
+  double last_error = angle - bnoInfo.orientation.x;
+
+
+  while (abs(orientation - angle) > 2 && millis() - tstart < 5000) {
+
+    if (!(0 <= orientation && orientation < 20)) {
+      p = (orientation - angle);
+    } else {
+      p = (orientation + 360 - angle);
+    }
+    last_error = p;
+    //  i = i + last_error;
+    PID = KP_TURN * p;
+
+    Serial.print("orientation: ");
+    Serial.println(orientation);
+    Serial.print("pid: ");
+    Serial.println(PID);
+    forward(-135, 135);
+
+    bno.getEvent(&bnoInfo, Adafruit_BNO055::VECTOR_EULER);
+    orientation = bnoInfo.orientation.x;
+  }
+  Serial.println("out");
+  utils::stopMotors();
+}
+
+
+
+void left(int relative_angle) {
+  utils::stopMotors();
+  delay(100);
+  bno.getEvent(&bnoInfo, Adafruit_BNO055::VECTOR_EULER);
+
+  spinLeft(relative_angle);
+
+  Serial.println("done turning");
+
+  utils::stopMotors();
+
+  //stopMotors();
+  delay(1000);
+}
+
+void goodSpinLeft(double relative_angle) {
+  
+   // while(!bno.begin()) {
+  //   Serial.println("BNO BEGIN");
+  //   delay(10);
+  // }
+  bno.getEvent(&bnoInfo, Adafruit_BNO055::VECTOR_EULER);
+  double initial = bnoInfo.orientation.x;
+  double orientation = initial;
+
+  int angle = (int) (orientation - relative_angle);
+
+  if(angle < 0) {
+    angle = 360 - abs(angle);
+  }
+
+  while (abs(orientation - angle) > 2) {
+
+    delay(10);
+    bno.getEvent(&bnoInfo, Adafruit_BNO055::VECTOR_EULER);
+    delay(10);
+    orientation = bnoInfo.orientation.x;
+
+    if (abs(angle - orientation) > 180) {
+      orientation -= 360;
+    }
+
+    Serial.print("Orientation: ");
+    Serial.print(bnoInfo.orientation.x);
+    Serial.print(" Goal: ");
+    Serial.println(angle);
+
+    forward(-135, 135);
+  }
+
+  utils::stopMotors();
+  delay(1000);
+
+}
+
+void goodSpinRight(double relative_angle) {
+  
+  // while(!bno.begin()) {
+  //   Serial.println("BNO BEGIN");
+  //   delay(10);
+  // }
+  bno.getEvent(&bnoInfo, Adafruit_BNO055::VECTOR_EULER);
+  double initial = bnoInfo.orientation.x;
+  double orientation = initial;
+
+  int angle = (int) (orientation + relative_angle) % 360;
+
+  while (abs(orientation - angle) > 2) {
+
+    delay(10);
+    bno.getEvent(&bnoInfo, Adafruit_BNO055::VECTOR_EULER);
+    delay(10);
+    orientation = bnoInfo.orientation.x;
+
+    if (abs(angle - orientation) > 180) {
+      orientation -= 360;
+    }
+
+    Serial.print("Orientation: ");
+    Serial.print(bnoInfo.orientation.x);
+    Serial.print(" Goal: ");
+    Serial.println(angle);
+
+    forward(135, -135);
+  }
+
+  utils::stopMotors();
+  delay(1000);
+}
+
+
+
+void spinRight(double relative_angle) {
+
+  if (abs(relative_angle) < 1) {
+    return;
+  }
+
+  double p, i = 0, d;
+  double PID;
+
+
+  const double initial_angle = bnoInfo.orientation.x;
+  double orientation = bnoInfo.orientation.x;
+  double angle = orientation + relative_angle;
+  if (angle > 400) {
+    angle = 90;
+  } else if (angle >= 350) {
+    angle = 0;
+  }
+
+  double tstart = millis();
+
+
+  Serial.print("angle: ");
+  Serial.println(angle);
+  Serial.print("current orientation: ");
+  Serial.println(orientation);
+  double last_error = angle - bnoInfo.orientation.x;
 
 
   while (abs(orientation - angle) > 2) {
@@ -118,34 +266,90 @@ void raw_right(double relative_angle, int speed, bool alignment) {
 
     Serial.print("pid: ");
     Serial.println(PID);
-     if (millis() - tstart < 3000 && PID > 0) {
-    forward((PID + 75), (-1*PID - 75));
-       Serial.println("turning");
-     } else {
-       forward(115, -115);
-     }
+    if (millis() - tstart < 3000 && PID > 0) {
+      forward((PID + 75), (-1 * PID - 75));
+      Serial.println("turning");
+    } else {
+      forward(210, -210);
+    }
 
-    bno.getEvent(&orientationData, Adafruit_BNO055::VECTOR_EULER);
-    orientation = orientationData.orientation.x;
-
+    bno.getEvent(&bnoInfo, Adafruit_BNO055::VECTOR_EULER);
+    orientation = bnoInfo.orientation.x;
   }
   Serial.println("out");
   utils::stopMotors();
 }
 
 
+// void spinRight(double relative_angle) {
 
-void right(int relative_angle, int speed, bool turn_status = true) {
+//   if (abs(relative_angle) < 1) {
+//     return;
+//   }
+
+//   double p, i = 0, d;
+//   double PID;
+//   bno.getEvent(&bnoInfo, Adafruit_BNO055::VECTOR_EULER);
+
+
+
+//   const double initial_angle = bnoInfo.orientation.x;
+//   double orientation = bnoInfo.orientation.x;
+//   double angle = orientation + relative_angle;
+//   if (angle > 400) {
+//     angle = 90;
+//   } else if (angle >= 350) {
+//     angle = 0;
+//   }
+
+//   double tstart = millis();
+
+
+//   Serial.print("angle: ");
+//   Serial.println(angle);
+//   Serial.print("current orientation: ");
+//   Serial.println(orientation);
+//   double last_error = angle - bnoInfo.orientation.x;
+
+
+//   while (abs(orientation - angle) > 2) {
+
+//     p = (angle - orientation);
+//     last_error = p;
+//     i = i + last_error;
+//     PID = KP_TURN * p + KI_TURN * i;
+
+//     Serial.print("pid: ");
+//     Serial.println(PID);
+//     if (millis() - tstart < 3000 && PID > 0) {
+//       forward((PID + 75), (-1 * PID - 75));
+//       Serial.println("turning");
+//     } else {
+//       forward(210, -210);
+//     }
+
+//     bno.getEvent(&bnoInfo, Adafruit_BNO055::VECTOR_EULER);
+//     orientation = bnoInfo.orientation.x;
+//   }
+//   Serial.println("out");
+//   utils::stopMotors();
+// }
+
+
+
+void right(int relative_angle) {
   utils::stopMotors();
   delay(100);
-  bno.getEvent(&orientationData, Adafruit_BNO055::VECTOR_EULER);
+  bno.getEvent(&bnoInfo, Adafruit_BNO055::VECTOR_EULER);
 
-  raw_right(relative_angle, speed, true);
+  Serial.println("starting turning");
+
+  spinRight(relative_angle);
 
   Serial.println("done turning");
 
   utils::stopMotors();
 
   //stopMotors();
-  delay(300);
+  delay(1000);
 }

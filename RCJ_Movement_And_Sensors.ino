@@ -1,6 +1,5 @@
 #include "Motor.h"
 #include "utils.h"
-#include "oled.h"
 #include "bno.h"
 #include <VL53L0X.h>
 #include <Adafruit_BNO055.h>
@@ -11,7 +10,9 @@
 using namespace utils;
 using namespace std;
 
-
+#define DROP_ANGLE 180
+#define INTAKE_ANGLE 0
+// #define TEST
 
 int count = 0;
 int offset = 0;
@@ -22,16 +23,7 @@ int currentY = 0;
 
 void setup() {
   Serial.begin(115200);
-  // lcd.init();
-  // lcd.backlight();
-  // lcd.init();
-  // lcd.backlight();
-  // leftServo.attach(7);
-  // rightServo.attach(8);
-  // Serial.println("spinning");
-  // leftServo.write(20);
-  // delay(500);
-  // Serial.println("spun");
+  initServos();
 
   utils::setMotors(&motorR, &motorL);
   bnoSetup();
@@ -40,27 +32,23 @@ void setup() {
   // } else {
   //   Serial.println("No TCS34725 found ... check your connections");
   // }
-  // tofCheck();
-  // calibrateTOF();
-  // for (int i = TOF_START; i <= 8; i++) {
-  //   if (true) {
-  //     tcaselect(i);
-  //     if (!tof.init()) {
-  //       Serial.print("Bruh :( sensor ");
-  //       Serial.print(i);
-  //       Serial.println(" is broken");
-  //     } else {
-  //       Serial.print("Yay! sensor ");
-  //       Serial.print(i);
-  //       Serial.println(" is init");
-  //     }
-  //     delay(5);
-  //     //tof.setTimeout(500);
-  //     //tof.startContinuous();
-  //   };
-//}
-  //Tile start;
-  //*currentTile = start;
+  for (int i = TOF_START; i <= 8; i++) {
+    if (true) {
+      tcaselect(i);
+      if (!tof.init()) {
+        Serial.print(":( sensor ");
+        Serial.print(i);
+        Serial.println(" is dead");
+      } else {
+        Serial.print(":) sensor ");
+        Serial.print(i);
+        Serial.println("is init");
+      }
+      delay(5);
+    };
+  }
+  // //Tile start;
+  // //*currentTile = start;
 
 
   // if (false) {
@@ -85,77 +73,176 @@ void setup() {
   // currentTile->point.x = currentX;
   // currentTile->point.y = currentY;
   Serial.println("complete setup");
-
-
 }
 
-// void dropRescueKitLeft() {
-//   leftServo.write(0);
-//   delay(500);
-//   leftServo.write(90);
-// }
 
-// void dropRescueKitRight() {
-//   rightServo.write(0);
-//   delay(500);
-//   rightServo.write(90);
-// }
+void initServos() {
+  leftServo.attach(7);
+  leftServo.writeMicroseconds(5000);
+  // rightServo.attach(8);
+  // leftServo.write(DROP_ANGLE);
+  // rightServo.write(DROP_ANGLE);
+}
 
-// uint16_t silverVal = 0;
-// uint16_t whiteVal = 0;
-// uint16_t blueVal = 0;
-// uint16_t blackVal = 0;
+void dropRescueKitLeft() {
+  leftServo.write(INTAKE_ANGLE);
+  delay(500);
+  leftServo.write(DROP_ANGLE);
+}
 
-// uint16_t silver_white_thresh = (silverVal + whiteVal) / 2;
-// uint16_t white_blue_thresh = (whiteVal + blueVal) / 2;
-// uint16_t blue_black_thresh = (blueVal + blackVal) / 2;
-// uint16_t r, g, b, c;
+void dropRescueKitRight() {
+  rightServo.write(INTAKE_ANGLE);
+  delay(500);
+  rightServo.write(DROP_ANGLE);
+}
 
+uint16_t silverVal = 0;
+uint16_t whiteVal = 0;
+uint16_t blueVal = 0;
+uint16_t blackVal = 0;
+
+uint16_t silver_white_thresh = (silverVal + whiteVal) / 2;
+uint16_t white_blue_thresh = (whiteVal + blueVal) / 2;
+uint16_t blue_black_thresh = (blueVal + blackVal) / 2;
+uint16_t r, g, b, c;
 
 void loop() {
-  right(90, 150, true);
-  delay(1000);
-  // if (tofCheck(0, 200)) {
-  //   Serial.println("Drive");
-  //   straightDrive(30, 150, 2, 60);
-  //   stopMotors();
-  //   delay(500);
-  // } else if (tofCheck(1, 200)) {
-  //   Serial.println("right");
-  //   while (turnCenterCheck()) {
-  //     motorL.run(150);
-  //     motorR.run(150);
-  //   }
-  //   stopMotors();
-  //   right(90, 150, true);
-  //   offset = orientationData.orientation.x;
-  // } else if (tofCheck(5, 200)) {
-  //   while (turnCenterCheck()) {
-  //     motorL.run(150);
-  //     motorR.run(150);
-  //   }
-  //   stopMotors();
-  //   Serial.println("Left");
-  //   left(90, 150, true);
-  //   offset = orientationData.orientation.x;
+
+  #ifndef TEST
+
+    bno.getEvent(&bnoInfo, Adafruit_BNO055::VECTOR_EULER);
+    offset = bnoInfo.orientation.x;
+    if(offset > 315 || offset < 45) {
+      offset = 0;
+    } else if (offset >= 45 && offset < 135) {
+      offset = 90;
+    } else if (offset >= 135 && offset < 225) {
+      offset = 180;
+    } else {
+      offset = 270;
+    }
+
+    Serial.print("TofCheck: ");
+    Serial.print(tofCheck(0, 200, 2));
+    if (tofCheck(0, 200, 2)) {
+
+      Serial.println("Drive");
+      straightDrive(30, 150, 2, 60);
+      stopMotors();
+      delay(1000);
+
+      if (tofCheckMin(0, 200, 2)) {
+        center();
+      }
+
+      utils::stopMotors();
+      delay(1000);
+    } else if (tofCheck(1, 60, 2)) {
+      Serial.println("right");
+      goodSpinRight(85);
+    } else if (tofCheck(5, 60, 2)) {
+      Serial.println("Left");
+      goodSpinLeft(85);
+
+      if (tofCheckMin(3, 100, 2)) {
+        backCenter();
+      }
+      offset = bnoInfo.orientation.x;
+    } else {
+      Serial.println("Left");
+      goodSpinLeft(180);
+      offset = bnoInfo.orientation.x;
+
+      if (tofCheckMin(3, 100, 2)) {
+        backCenter();
+      }
+      // String path;
+      // Tile* result = bfs(currentTile, path);
+      // priv ntGraph();
+      //  Serial.print("Path: ");
+      // Serial.println(path);
+    }
+
+  #endif
+  #ifdef TEST
+  // goodSpinRight(85);
+  // delay(1000);
+  // bno.getEvent(&bnoInfo, Adafruit_BNO055::VECTOR_EULER);
+  // offset = bnoInfo.orientation.x;
+  // if(offset > 315 || offset < 45) {
+  //   offset = 0;
+  // } else if (offset >= 45 && offset < 135) {
+  //   offset = 90;
+  // } else if (offset >= 135 && offset < 225) {
+  //   offset = 180;
   // } else {
-  //   // String path;
-  //   // Tile* result = bfs(currentTile, path);
-  //   // printGraph();
-  //   // Serial.print("Path: ");
-  //   // Serial.println(path);
+  //   offset = 270;
   // }
+  // straightDrive(30, 150, 2, 60);
+  // delay(1000);
+  goodSpinLeft(85);
+  delay(1000);
+  bno.getEvent(&bnoInfo, Adafruit_BNO055::VECTOR_EULER);
+  offset = bnoInfo.orientation.x;
+  if(offset > 315 || offset < 45) {
+    offset = 0;
+  } else if (offset >= 45 && offset < 135) {
+    offset = 90;
+  } else if (offset >= 135 && offset < 225) {
+    offset = 180;
+  } else {
+    offset = 270;
+  }
+  straightDrive(30, 150, 2, 60);
+
+  #endif
 }
 
-// bool turnCenterCheck() {
-//   tcaselect(0);
-//   return tof.readRangeSingleMillimeters() > 80;
-// }
+bool turnCenterCheck() {
+  tcaselect(0);
+  return tof.readRangeSingleMillimeters() > 80;
+}
 
-// void getTOFValues(int i) {
-//   tcaselect(i);
-//   return tof.readRangeSingleMillimeters();
-// }
+
+void center() {
+  tcaselect(0);
+  while (tof.readRangeSingleMillimeters() > 70) {
+    forward(120, 120);
+  } 
+
+  utils::stopMotors();
+  delay(500);
+  
+  while (tof.readRangeSingleMillimeters() < 50) {
+    forward(-120, -120);
+  }
+
+  utils::stopMotors();
+  delay(500);
+}
+
+void backCenter() {
+  tcaselect(3);
+
+  while (tof.readRangeSingleMillimeters() > 70) {
+    forward(-80, -80);
+  } 
+
+  utils::stopMotors();
+  delay(500);
+  
+  while (tof.readRangeSingleMillimeters() < 50) {
+    forward(80, 80);
+  }
+
+  utils::stopMotors();
+  delay(500);
+}
+
+void getTOFValues(int i) {
+  tcaselect(i);
+  return tof.readRangeSingleMillimeters();
+}
 
 // // void printGraph() {
 // //   for (int i = 0; i < adj.size(); i++) {
@@ -171,108 +258,117 @@ void loop() {
 // //   Serial.println("");
 // // }
 
-// bool wallDetected() {
-//   tcaselect(0);
-//   if (tof.readRangeSingleMillimeters() < 20) {
-//     return true;
-//   } else {
-//     return false;
-//   }
-// }
+bool wallDetected() {
+  tcaselect(0);
+  if (tof.readRangeSingleMillimeters() < 20) {
+    return true;
+  } else {
+    return false;
+  }
+}
 
-// void printArray(int array1[]) {
-//   Serial.print("[");
-//   for (int i = 0; i < 7; i++) {
-//     Serial.print(array1[i]);
-//     if (i != 6) {
-//       Serial.print(", ");
-//     }
-//   }
-//   Serial.println("]");
-// }
+boolean tofCheck(int id, int maxDist) {
+  tcaselect(id);
+  return tof.readRangeSingleMillimeters() > maxDist;
+}
 
-// void tofCheck() {
-//   for (int i = TOF_START; i <= TOF_NUMBER; i++) {
-//     tcaselect(i);
-//     if (!tof.init()) {
-//       Serial.print("Bruh :( sensor ");
-//       Serial.print(i);
-//       Serial.println(" is broken");
-//     } else {
-//       Serial.print("Yay! sensor ");
-//       Serial.print(i);
-//       Serial.println(" is init");
-//     }
-//     delay(5);
-//     //tof.setTimeout(500);
-//     //tof.startContinuous();
-//   };
-// }
-// void straightDrive(int cm, int speed, int tolerance, int milDist) {
-//   double tireCircum = 25.4;  //10 inches in cm
-//   double encPerRev = 368;    //8 ticks per rev on a 1:46 gear ratio
-//   double multiplier = encPerRev / tireCircum;
-//   int encoders = cm * multiplier;
+boolean tofCheck(int id, int maxDist, int sampleNumber) {
+  int total = 0;
+  tcaselect(id);
+  for (int i = 0; i < sampleNumber; i++) {
+    total += tof.readRangeSingleMillimeters();
+  }
 
-//   // bno.begin(Adafruit_BNO055::);
-//   int angle;
-//   utils::resetTicks();
-//   float p, d, i = 0;
-//   float p_turn, d_turn, last_difference = 0;
-//   float PID;
-//   float last_dist = abs(motorL.getTicks() / abs(encoders));
+  return ((double) total/ (double) sampleNumber) > (double) maxDist;
+}
 
-//   //conversion from cm to encoders
+boolean tofCheckMin(int id, int maxDist, int sampleNumber) {
+  int total = 0;
+  tcaselect(id);
+  for (int i = 0; i < sampleNumber; i++) {
+    total += tof.readRangeSingleMillimeters();
+  }
 
-//   while (abs(motorL.getTicks()) < abs(encoders) && abs(motorR.getTicks()) < abs(encoders)) {
+  return ((double) total/ (double) sampleNumber) < (double) maxDist;
+}
 
-//     // tcs.getRawData(&r, &g, &b, &c);
+void printArray(int array1[]) {
+  Serial.print("[");
+  for (int i = 0; i < 7; i++) {
+    Serial.print(array1[i]);
+    if (i != 6) {
+      Serial.print(", ");
+    }
+  }
+  Serial.println("]");
+}
 
-//     // if (c < blue_black_thresh) {
-//     //   stopMotors();
-//     //   delay(20);
-//     //   right(180, 150, true);
-//     //   break;
-//     // }
+void straightDrive(int cm, int speed, int tolerance, int milDist) {
+  int encoders = cm * (368 / 25.4);
 
-//     bno.getEvent(&orientationData, Adafruit_BNO055::VECTOR_EULER);
-//     int minspeed = 50;
-//     p = speed * (float)(abs(encoders) - abs(motorL.getTicks())) / abs(encoders);
-//     i = i + p;
-//     d = p - last_dist;
-//     PID = p * KP_FORWARD + i * KI_FORWARD + d * KD_FORWARD;
+  // bno.begin(Adafruit_BNO055::);
+  int angle;
+  utils::resetTicks();
+  float p, d, i = 0;
+  float p_turn, d_turn, last_difference = 0;
+  float PID;
+  float last_dist = abs(motorL.getEncoders() / abs(encoders));
 
+  //conversion from cm to encoders
+  tcaselect(0);
 
-//     if (orientationData.orientation.x > 180 + offset) {
-//       p_turn = orientationData.orientation.x - 360 - offset;
-//     } else {
-//       p_turn = orientationData.orientation.x - offset;
-//     }
-//     // Serial.print("Right: ");
-//     // Serial.println(PID - p_turn + 10);
-//     // Serial.print("Left: ");
-//     // Serial.println(PID + p_turn);
-//     utils::forward(PID - p_turn + 10, PID + p_turn);
-//     angle = orientationData.orientation.x;
-//     // Serial.println(orientationData.orientation.x);
-//   }
-//   utils::stopMotors();
-// }
+  while (abs(motorL.getEncoders()) < abs(encoders) && abs(motorR.getEncoders()) < abs(encoders) && tof.readRangeSingleMillimeters() > 50) {
+
+ if(abs(offset-bnoInfo.orientation.x) > 180) {
+    p_turn = offset - bnoInfo.orientation.x + 360;
+  } else {
+    p_turn = offset - bnoInfo.orientation.x;
+  }
+
+    /*
+    
+    // tcs.getRawData(&r, &g, &b, &c);
+
+    // if (c < blue_black_thresh) {
+    //   stopMotors();
+    //   delay(20);
+    //   right(180, 150, true);
+    //   break;
+    // }
+
+    bno.getEvent(&bnoInfo, Adafruit_BNO055::VECTOR_EULER);
+
+    p = speed * (float)(abs(encoders) - abs(motorL.getEncoders())) / abs(encoders);
+    i = i + p;
+    d = p - last_dist;
+    PID = p * KP_FORWARD + i * KI_FORWARD + d * KD_FORWARD;
 
 
 
 
-// void tofSensorCheck() {
-//   for (int i = TOF_START; i <= TOF_NUMBER; i++) {
-//     tcaselect(i);
-//     if (!tof.init()) {
-//       Serial.print("Bruh :( sensor ");
-//       Serial.print(i);
-//       Serial.println(" is broken");
-//     } else {
-//       Serial.print("Yay! sensor ");
-//       Serial.print(i);
-//       Serial.println(" is init");
-//     }
-//   }
-// }
+ 
+  p_turn*=-1;
+    // Serial.print("Right: ");
+    // Serial.println(PID - p_turn + 10);
+    // Serial.print("Left: ");
+    // Serial.println(PID + p_turn);
+    // Serial.println(PID);
+    Serial.println(p_turn);
+    // if(abs(bnoInfo.orientation.x - offset) < 2 || abs(bnoInfo.orientation.x - offset) > 300)
+      utils::forward(PID - (p_turn * KP_STRAIGHTEN), PID + (KP_STRAIGHTEN * p_turn));
+    // else {
+    //   utils::forward(-p_turn*KP_STRAIGHTEN, p_turn*KP_STRAIGHTEN);
+    // }
+    angle = bnoInfo.orientation.x;
+    // Serial.println(bnoInfo.orientation.x);
+
+
+    */
+
+    forward(120 + p_turn*KP_STRAIGHTEN, 120 - p_turn*KP_STRAIGHTEN);
+  }
+  utils::stopMotors();
+}
+
+
+
