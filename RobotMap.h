@@ -2,7 +2,6 @@
 #include <U8x8lib.h>
 #include <VL53L0X.h>
 
-
 #define TOF_NUMBER 6
 #define TOF_START 0
 
@@ -31,7 +30,7 @@ const double KP_FORWARD = 1.4;
 const double KI_FORWARD = 0.003;
 const double KD_FORWARD = 0.01;
 
-const double KP_STRAIGHTEN = 3.3;
+const double KP_STRAIGHTEN = 3;
 
 
 
