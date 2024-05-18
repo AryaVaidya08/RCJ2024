@@ -5,6 +5,8 @@
 #include <Adafruit_BNO055.h>
 #include <Adafruit_TCS34725.h>
 #include <utility/imumaths.h>
+#include "AS726X.h"
+
 
 
 
@@ -12,20 +14,25 @@ using namespace utils;
 using namespace std;
 
 Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_614MS, TCS34725_GAIN_1X);
+AS726X sensor;
 
 uint16_t r, g, b, c;
 
 
 void updateTCS() {
-tcaselect(7);
-tcs.getRawData(&r, &g, &b, &c);
-r = map(r,0, 65535, 0, 255);
-g = map(g,0, 65535, 0, 255);
-b = map(b,0, 65535, 0, 255);
-c = map(c,0, 65535, 0, 255);
-char buff[100];
-sprintf(buff, "r: %d, g: %d, b: %d, c:%d", r, g, b, c);
-Serial.println(buff);
+  r = 0;
+  b = 0;
+  g = 0;
+  c = 0;
+  tcaselect(7);
+  tcs.getRawData(&r, &g, &b, &c);
+  r = map(r, 0, 65535, 0, 255);
+  g = map(g, 0, 65535, 0, 255);
+  b = map(b, 0, 65535, 0, 255);
+  c = map(c, 0, 65535, 0, 255);
+  char buff[100];
+  sprintf(buff, "r: %d, g: %d, b: %d, c:%d", r, g, b, c);
+  Serial.println(buff);
 }
 
 #define DROP_ANGLE 180
@@ -44,13 +51,27 @@ void setup() {
   initServos();
 
 
+  dropRescueKitLeft();
+  dropRescueKitLeft();
+  dropRescueKitRight();
+  dropRescueKitRight();
+  dropRescueKitLeft();
+  dropRescueKitRight();
+  dropRescueKitRight();
+
+
+
+  while (1)
+    ;
+
+
   utils::setMotors(&motorR, &motorL);
   bnoSetup();
-  tcaselect(7);
-  if (tcs.begin()) {
+  // tcaselect(7);
+  if (sensor.begin()) {
     Serial.println("Found sensor");
   } else {
-    Serial.println("No TCS34725 found ... check your connections");
+    Serial.println("No AS726X found ... check your connections");
   }
   for (int i = TOF_START; i < 7; i++) {
     if (true) {
@@ -69,15 +90,15 @@ void setup() {
   }
 
 
-  updateTCS();
-  if((double)b/(double)r > 2) {
-    Serial.println("Blue");
-  } else if (c < 20) {
-    Serial.println("Black");
-  } else {
-    Serial.println("white/silver");
-  }
-  // //Tile start; 
+  // updateTCS();
+  // if ((double)b / (double)r > 2) {
+  //   Serial.println("Blue");
+  // } else if (c < 20) {
+  //   Serial.println("Black");
+  // } else {
+  //   Serial.println("white/silver");
+  // }
+  // //Tile start;
   // //*currentTile = start;
 
 
@@ -114,23 +135,23 @@ void initServos() {
 }
 
 void dropRescueKitLeft() {
-    leftServo.write(180);
+  leftServo.write(180);
   delay(500);
- for(int i = 0; i < 80; i+=1) {
-   leftServo.write(i);
+  for (int i = 0; i < 80; i += 1) {
+    leftServo.write(i);
     delay(100);
- }
- leftServo.write(180);
+  }
+  leftServo.write(180);
 }
 
 void dropRescueKitRight() {
-    rightServo.write(0);
-delay(500);
- for(int i = 180; i > 100; i-=1) {
-   rightServo.write(i);
+  rightServo.write(0);
+  delay(500);
+  for (int i = 180; i > 100; i -= 1) {
+    rightServo.write(i);
     delay(40);
- }
- rightServo.write(0);
+  }
+  rightServo.write(0);
 }
 
 uint16_t silverVal = 0;
@@ -145,9 +166,9 @@ uint16_t blue_black_thresh = (blueVal + blackVal) / 2;
 
 void loop() {
 
-  #ifndef TEST
+#ifndef TEST
 
-     bno.getEvent(&bnoInfo, Adafruit_BNO055::VECTOR_EULER);
+  bno.getEvent(&bnoInfo, Adafruit_BNO055::VECTOR_EULER);
   offset = bnoInfo.orientation.x;
   if (offset > 315 || offset < 45) {
     offset = 0;
@@ -164,7 +185,7 @@ void loop() {
   if (tofCheck(0, 200, 2)) {
 
     Serial.println("Drive");
-    straightDrive(25, 150, 2, 60);
+    straightDrive(30, 150, 2, 60);
     stopMotors();
     delay(1000);
 
@@ -218,8 +239,8 @@ void loop() {
   }
 
 
-  #endif
-  #ifdef TEST
+#endif
+#ifdef TEST
   // goodSpinRight(85);
   // delay(1000);
   // bno.getEvent(&bnoInfo, Adafruit_BNO055::VECTOR_EULER);
@@ -239,7 +260,7 @@ void loop() {
   delay(1000);
   bno.getEvent(&bnoInfo, Adafruit_BNO055::VECTOR_EULER);
   offset = bnoInfo.orientation.x;
-  if(offset > 315 || offset < 45) {
+  if (offset > 315 || offset < 45) {
     offset = 0;
   } else if (offset >= 45 && offset < 135) {
     offset = 90;
@@ -250,7 +271,7 @@ void loop() {
   }
   straightDrive(30, 150, 2, 60);
 
-  #endif
+#endif
 }
 
 bool turnCenterCheck() {
@@ -263,11 +284,11 @@ void center() {
   tcaselect(0);
   while (tof.readRangeSingleMillimeters() > 70) {
     forward(120, 120);
-  } 
+  }
 
   utils::stopMotors();
   delay(500);
-  
+
   while (tof.readRangeSingleMillimeters() < 50) {
     forward(-120, -120);
   }
@@ -281,11 +302,11 @@ void backCenter() {
 
   while (tof.readRangeSingleMillimeters() > 70) {
     forward(-80, -80);
-  } 
+  }
 
   utils::stopMotors();
   delay(500);
-  
+
   while (tof.readRangeSingleMillimeters() < 50) {
     forward(80, 80);
   }
@@ -334,7 +355,7 @@ boolean tofCheck(int id, int maxDist, int sampleNumber) {
     total += tof.readRangeSingleMillimeters();
   }
 
-  return ((double) total/ (double) sampleNumber) > (double) maxDist;
+  return ((double)total / (double)sampleNumber) > (double)maxDist;
 }
 
 boolean tofCheckMin(int id, int maxDist, int sampleNumber) {
@@ -344,7 +365,7 @@ boolean tofCheckMin(int id, int maxDist, int sampleNumber) {
     total += tof.readRangeSingleMillimeters();
   }
 
-  return ((double) total/ (double) sampleNumber) < (double) maxDist;
+  return ((double)total / (double)sampleNumber) < (double)maxDist;
 }
 
 void printArray(int array1[]) {
@@ -370,27 +391,32 @@ void straightDrive(int cm, int speed, int tolerance, int milDist) {
   float last_dist = abs(motorL.getEncoders() / abs(encoders));
 
   //conversion from cm to encoders
-  tcaselect(0);
+  // tcaselect(0);
 
-  while (abs(motorL.getEncoders()) < abs(encoders) && abs(motorR.getEncoders()) < abs(encoders) && tof.readRangeSingleMillimeters() > 50 && !seenBlack) {
+  while (abs(motorL.getEncoders()) < abs(encoders) && abs(motorR.getEncoders()) < abs(encoders) && tof.readRangeSingleMillimeters() > 50 && seenBlack == false) {
 
- if(abs(offset-bnoInfo.orientation.x) > 180) {
-    p_turn = offset - bnoInfo.orientation.x + 360;
-  } else {
-    p_turn = offset - bnoInfo.orientation.x;
-  }
 
-    
-    
-    updateTCS();
+    if (abs(offset - bnoInfo.orientation.x) > 180) {
+      p_turn = offset - bnoInfo.orientation.x + 360;
+    } else {
+      p_turn = offset - bnoInfo.orientation.x;
+    }
 
-    while (c < 20 && (double)b/(double)r < 2) {
+
+
+    sensor.takeMeasurements();
+    Serial.println(sensor.getCalibratedBlue());
+
+
+    if (sensor.getCalibratedBlue() < 20 && (double)sensor.getCalibratedBlue() / (double)sensor.getCalibratedRed() < 2) {
+      Serial.println("Black detected");
       stopMotors();
       delay(500);
       forward(-100, -100);
+      delay(1000);
       seenBlack = true;
     }
-/*
+    /*
     bno.getEvent(&bnoInfo, Adafruit_BNO055::VECTOR_EULER);
 
     p = speed * (float)(abs(encoders) - abs(motorL.getEncoders())) / abs(encoders);
@@ -420,9 +446,9 @@ void straightDrive(int cm, int speed, int tolerance, int milDist) {
 
     */
 
-    forward(120 + p_turn*KP_STRAIGHTEN, 120 - p_turn*KP_STRAIGHTEN);
+    forward(120 + p_turn * KP_STRAIGHTEN, 120 - p_turn * KP_STRAIGHTEN);
   }
-  if(seenBlack) {
+  if (seenBlack) {
     goodSpinLeft(180);
     offset = bnoInfo.orientation.x;
     offset = bnoInfo.orientation.x;
@@ -438,5 +464,3 @@ void straightDrive(int cm, int speed, int tolerance, int milDist) {
   }
   utils::stopMotors();
 }
-
-
