@@ -47,22 +47,10 @@ int currentY = 0;
 
 
 void setup() {
+  pinMode(26, OUTPUT);
   Serial.begin(115200);
   initServos();
-
-
-  dropRescueKitLeft();
-  dropRescueKitLeft();
-  dropRescueKitRight();
-  dropRescueKitRight();
-  dropRescueKitLeft();
-  dropRescueKitRight();
-  dropRescueKitRight();
-
-
-
-  while (1)
-    ;
+  noTone(26);
 
 
   utils::setMotors(&motorR, &motorL);
@@ -137,9 +125,9 @@ void initServos() {
 void dropRescueKitLeft() {
   leftServo.write(180);
   delay(500);
-  for (int i = 0; i < 80; i += 1) {
+  for (int i = 0; i < 120; i += 1) {
     leftServo.write(i);
-    delay(100);
+    delay(60);
   }
   leftServo.write(180);
 }
@@ -195,10 +183,10 @@ void loop() {
 
     utils::stopMotors();
     delay(1000);
-  } else if (tofCheck(1, 120, 2)) {
+  } else if (tofCheck(1, 200, 2)) {
     Serial.println("right");
     goodSpinRight(85);
-  } else if (tofCheck(5, 120, 2)) {
+  } else if (tofCheck(5, 200, 2)) {
     Serial.println("Left");
     goodSpinLeft(85);
     offset = bnoInfo.orientation.x;
@@ -211,7 +199,7 @@ void loop() {
     } else {
       offset = 270;
     }
-    if (tofCheckMin(3, 100, 2)) {
+    if (tofCheckMin(3, 200, 2)) {
       backCenter();
     }
   } else {
@@ -228,7 +216,7 @@ void loop() {
     } else {
       offset = 270;
     }
-    if (tofCheckMin(3, 100, 2)) {
+    if (tofCheckMin(3, 200, 2)) {
       backCenter();
     }
     // String path;
@@ -404,17 +392,20 @@ void straightDrive(int cm, int speed, int tolerance, int milDist) {
 
 
 
-    sensor.takeMeasurements();
-    Serial.println(sensor.getCalibratedBlue());
+    sensor.takeMeasurementsWithBulb();
+    Serial.print("B: ");
+    Serial.print(sensor.getCalibratedBlue());
+    Serial.print("R: ");
+    Serial.println(sensor.getCalibratedRed());
 
 
-    if (sensor.getCalibratedBlue() < 20 && (double)sensor.getCalibratedBlue() / (double)sensor.getCalibratedRed() < 2) {
+    if (sensor.getCalibratedBlue() < 1000) {
       Serial.println("Black detected");
       stopMotors();
-      delay(500);
-      forward(-100, -100);
       delay(1000);
       seenBlack = true;
+    } else {
+      forward(50 + p_turn * KP_STRAIGHTEN, 50 - p_turn * KP_STRAIGHTEN);
     }
     /*
     bno.getEvent(&bnoInfo, Adafruit_BNO055::VECTOR_EULER);
@@ -445,22 +436,27 @@ void straightDrive(int cm, int speed, int tolerance, int milDist) {
 
 
     */
-
-    forward(120 + p_turn * KP_STRAIGHTEN, 120 - p_turn * KP_STRAIGHTEN);
   }
   if (seenBlack) {
-    goodSpinLeft(180);
-    offset = bnoInfo.orientation.x;
-    offset = bnoInfo.orientation.x;
-    if (offset > 315 || offset < 45) {
-      offset = 0;
-    } else if (offset >= 45 && offset < 135) {
-      offset = 90;
-    } else if (offset >= 135 && offset < 225) {
-      offset = 180;
-    } else {
-      offset = 270;
-    }
+    stopMotors();
+    Serial.println(motorL.getEncoders());
+      while(abs(motorL.getEncoders()) > 5) {
+        Serial.println(motorL.getEncoders());
+        forward(-100);
+      }
+      stopMotors();
+      goodSpinLeft(180);
+      offset = bnoInfo.orientation.x;
+      offset = bnoInfo.orientation.x;
+      if (offset > 315 || offset < 45) {
+        offset = 0;
+      } else if (offset >= 45 && offset < 135) {
+        offset = 90;
+      } else if (offset >= 135 && offset < 225) {
+        offset = 180;
+      } else {
+        offset = 270;
+      }
+     }
+    // utils::stopMotors();
   }
-  utils::stopMotors();
-}
