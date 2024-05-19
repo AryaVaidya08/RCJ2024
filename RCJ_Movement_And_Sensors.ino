@@ -13,6 +13,128 @@
 using namespace utils;
 using namespace std;
 
+
+using namespace utils;
+using namespace std;
+
+// class Point2d {
+// public:
+//   int x;
+//   int y;
+//   int hash() {
+//     return (x << 25 + y << 24) % (int)(1e9 + 7);
+//   }
+// };
+
+// LittleVector<LittleVector<Point2d>> adj(10);
+
+
+// Vector<Vector<Point2d>> adj(1007);
+
+
+
+// class Tile {
+// public:
+//   Tile* N = NULL;
+//   Tile* S = NULL;
+//   Tile* W = NULL;
+//   Tile* E = NULL;
+//   bool arrived = false;
+//   Point2d point;
+// };
+
+// class Queue {
+// public:
+//   struct Node {
+//     Tile* data;
+//     String path;
+//     Node* next;
+//   };
+
+//   Node* front;
+//   Node* rear;
+
+// public:
+//   Queue()
+//     : front(nullptr), rear(nullptr) {}
+
+//   bool isEmpty() {
+//     return front == nullptr;
+//   }
+
+//   void enqueue(Tile* tile, String path) {
+//     Node* newNode = new Node;
+//     newNode->data = tile;
+//     newNode->path = path;
+//     newNode->next = nullptr;
+//     if (isEmpty()) {
+//       front = rear = newNode;
+//     } else {
+//       rear->next = newNode;
+//       rear = newNode;
+//     }
+//   }
+
+//   Node* dequeue() {
+//     if (isEmpty()) {
+//       return nullptr;
+//     } else {
+//       Node* temp = front;
+//       front = front->next;
+//       if (front == nullptr) {
+//         rear = nullptr;
+//       }
+//       return temp;
+//     }
+//   }
+// };
+
+// // Breadth-first search function
+// Tile* bfs(Tile* currentTile, String& path) {
+//   if (!currentTile) return nullptr;
+
+//   Queue q;
+//   q.enqueue(currentTile, "");
+
+//   while (!q.isEmpty()) {
+//     Queue::Node* node = q.dequeue();
+//     Tile* tile = node->data;
+//     String currentPath = node->path;
+
+//     if (!tile->arrived) {
+//       path = currentPath;
+//       return tile;
+//     }
+
+//     if (tile->N != NULL) q.enqueue(tile->N, currentPath + "N");
+//     if (tile->S != NULL) q.enqueue(tile->S, currentPath + "S");
+//     if (tile->W != NULL) q.enqueue(tile->W, currentPath + "W");
+//     if (tile->E != NULL) q.enqueue(tile->E, currentPath + "E");
+//   }
+
+//   return nullptr;
+// }
+
+// int tofCheck(int id, int maxDist) {
+//   tcaselect(id);
+//   return tof.readRangeSingleMillimeters() > maxDist;
+// }
+
+// int setAngles[5] = { 0, 270, 180, 90, 0 };
+// int tofSensorValues[4] = { 0, 0, 0, 0 };
+// int count = 0;
+// int offset = 0;
+
+// Tile* currentTile;
+
+
+
+
+
+
+
+
+
 Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_614MS, TCS34725_GAIN_1X);
 AS726X sensor;
 
@@ -47,10 +169,22 @@ int currentY = 0;
 
 
 void setup() {
-  pinMode(29, OUTPUT);
-  Serial.begin(9600);
+  Serial.begin(115200);
   initServos();
-  noTone(26);
+
+
+  dropRescueKitLeft();
+  dropRescueKitLeft();
+  dropRescueKitRight();
+  dropRescueKitRight();
+  dropRescueKitLeft();
+  dropRescueKitRight();
+  dropRescueKitRight();
+
+
+
+  while (1)
+    ;
 
 
   utils::setMotors(&motorR, &motorL);
@@ -125,9 +259,9 @@ void initServos() {
 void dropRescueKitLeft() {
   leftServo.write(180);
   delay(500);
-  for (int i = 0; i < 120; i += 1) {
+  for (int i = 0; i < 80; i += 1) {
     leftServo.write(i);
-    delay(60);
+    delay(100);
   }
   leftServo.write(180);
 }
@@ -153,6 +287,9 @@ uint16_t blue_black_thresh = (blueVal + blackVal) / 2;
 
 
 void loop() {
+
+#ifndef TEST
+
   bno.getEvent(&bnoInfo, Adafruit_BNO055::VECTOR_EULER);
   offset = bnoInfo.orientation.x;
   if (offset > 315 || offset < 45) {
@@ -180,10 +317,10 @@ void loop() {
 
     utils::stopMotors();
     delay(1000);
-  } else if (tofCheck(1, 200, 2)) {
+  } else if (tofCheck(1, 120, 2)) {
     Serial.println("right");
     goodSpinRight(85);
-  } else if (tofCheck(5, 200, 2)) {
+  } else if (tofCheck(5, 120, 2)) {
     Serial.println("Left");
     goodSpinLeft(85);
     offset = bnoInfo.orientation.x;
@@ -196,7 +333,7 @@ void loop() {
     } else {
       offset = 270;
     }
-    if (tofCheckMin(3, 200, 2)) {
+    if (tofCheckMin(3, 100, 2)) {
       backCenter();
     }
   } else {
@@ -213,7 +350,7 @@ void loop() {
     } else {
       offset = 270;
     }
-    if (tofCheckMin(3, 200, 2)) {
+    if (tofCheckMin(3, 100, 2)) {
       backCenter();
     }
     // String path;
@@ -224,18 +361,39 @@ void loop() {
   }
 
 
-  sensor.takeMeasurementsWithBulb();
-  Serial.print("ratio: ");
-  double blue = sensor.getCalibratedBlue();
-  double red = sensor.getCalibratedRed();
-  Serial.println(blue / red);
-  if ((double)sensor.getCalibratedBlue() / (double)sensor.getCalibratedRed() > 5) {
-    stopMotors();
-    digitalWrite(29, HIGH);
-    delay(6000);
+#endif
+#ifdef TEST
+  // goodSpinRight(85);
+  // delay(1000);
+  // bno.getEvent(&bnoInfo, Adafruit_BNO055::VECTOR_EULER);
+  // offset = bnoInfo.orientation.x;
+  // if(offset > 315 || offset < 45) {
+  //   offset = 0;
+  // } else if (offset >= 45 && offset < 135) {
+  //   offset = 90;
+  // } else if (offset >= 135 && offset < 225) {
+  //   offset = 180;
+  // } else {
+  //   offset = 270;
+  // }
+  // straightDrive(30, 150, 2, 60);
+  // delay(1000);
+  goodSpinLeft(85);
+  delay(1000);
+  bno.getEvent(&bnoInfo, Adafruit_BNO055::VECTOR_EULER);
+  offset = bnoInfo.orientation.x;
+  if (offset > 315 || offset < 45) {
+    offset = 0;
+  } else if (offset >= 45 && offset < 135) {
+    offset = 90;
+  } else if (offset >= 135 && offset < 225) {
+    offset = 180;
+  } else {
+    offset = 270;
   }
+  straightDrive(30, 150, 2, 60);
 
-  // dropRescueKitRight();
+#endif
 }
 
 bool turnCenterCheck() {
@@ -359,7 +517,7 @@ void straightDrive(int cm, int speed, int tolerance, int milDist) {
 
   while (abs(motorL.getEncoders()) < abs(encoders) && abs(motorR.getEncoders()) < abs(encoders) && tof.readRangeSingleMillimeters() > 50 && seenBlack == false) {
 
-    bno.getEvent(&bnoInfo, Adafruit_BNO055::VECTOR_EULER);
+
     if (abs(offset - bnoInfo.orientation.x) > 180) {
       p_turn = offset - bnoInfo.orientation.x + 360;
     } else {
@@ -368,35 +526,17 @@ void straightDrive(int cm, int speed, int tolerance, int milDist) {
 
 
 
-    sensor.takeMeasurementsWithBulb();
-    Serial.print("B: ");
-    Serial.print(sensor.getCalibratedBlue());
-    Serial.print("R: ");
-    Serial.println(sensor.getCalibratedRed());
+    sensor.takeMeasurements();
+    Serial.println(sensor.getCalibratedBlue());
 
 
-    if (sensor.getCalibratedBlue() < 1000) {
+    if (sensor.getCalibratedBlue() < 20 && (double)sensor.getCalibratedBlue() / (double)sensor.getCalibratedRed() < 2) {
       Serial.println("Black detected");
       stopMotors();
+      delay(500);
+      forward(-100, -100);
       delay(1000);
       seenBlack = true;
-    }
-    if (!seenBlack) {
-      bno.getEvent(&bnoInfo, Adafruit_BNO055::VECTOR_EULER);
-      Serial.println(bnoInfo.orientation.z);
-      if (bnoInfo.orientation.z > 3) {
-        while (bnoInfo.orientation.z > 3) {
-          bno.getEvent(&bnoInfo, Adafruit_BNO055::VECTOR_EULER);
-          forward(255, 255);
-        }
-      } else if (bnoInfo.orientation.z < -3) {
-        while (bnoInfo.orientation.z < -3) {
-          bno.getEvent(&bnoInfo, Adafruit_BNO055::VECTOR_EULER);
-          forward(40, 40);
-        }
-      } else {
-        forward(50 + p_turn * KP_STRAIGHTEN, 50 - p_turn * KP_STRAIGHTEN);
-      }
     }
     /*
     bno.getEvent(&bnoInfo, Adafruit_BNO055::VECTOR_EULER);
@@ -427,15 +567,10 @@ void straightDrive(int cm, int speed, int tolerance, int milDist) {
 
 
     */
+
+    forward(120 + p_turn * KP_STRAIGHTEN, 120 - p_turn * KP_STRAIGHTEN);
   }
   if (seenBlack) {
-    stopMotors();
-    Serial.println(motorL.getEncoders());
-    while (abs(motorL.getEncoders()) > 5) {
-      Serial.println(motorL.getEncoders());
-      forward(-100);
-    }
-    stopMotors();
     goodSpinLeft(180);
     offset = bnoInfo.orientation.x;
     offset = bnoInfo.orientation.x;
@@ -449,5 +584,5 @@ void straightDrive(int cm, int speed, int tolerance, int milDist) {
       offset = 270;
     }
   }
-  // utils::stopMotors();
+  utils::stopMotors();
 }
