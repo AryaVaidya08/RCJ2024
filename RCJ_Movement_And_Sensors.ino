@@ -47,8 +47,8 @@ int currentY = 0;
 
 
 void setup() {
-  pinMode(26, OUTPUT);
-  Serial.begin(115200);
+  pinMode(29, OUTPUT);
+  Serial.begin(9600);
   initServos();
   noTone(26);
 
@@ -153,9 +153,6 @@ uint16_t blue_black_thresh = (blueVal + blackVal) / 2;
 
 
 void loop() {
-
-#ifndef TEST
-
   bno.getEvent(&bnoInfo, Adafruit_BNO055::VECTOR_EULER);
   offset = bnoInfo.orientation.x;
   if (offset > 315 || offset < 45) {
@@ -227,39 +224,18 @@ void loop() {
   }
 
 
-#endif
-#ifdef TEST
-  // goodSpinRight(85);
-  // delay(1000);
-  // bno.getEvent(&bnoInfo, Adafruit_BNO055::VECTOR_EULER);
-  // offset = bnoInfo.orientation.x;
-  // if(offset > 315 || offset < 45) {
-  //   offset = 0;
-  // } else if (offset >= 45 && offset < 135) {
-  //   offset = 90;
-  // } else if (offset >= 135 && offset < 225) {
-  //   offset = 180;
-  // } else {
-  //   offset = 270;
-  // }
-  // straightDrive(30, 150, 2, 60);
-  // delay(1000);
-  goodSpinLeft(85);
-  delay(1000);
-  bno.getEvent(&bnoInfo, Adafruit_BNO055::VECTOR_EULER);
-  offset = bnoInfo.orientation.x;
-  if (offset > 315 || offset < 45) {
-    offset = 0;
-  } else if (offset >= 45 && offset < 135) {
-    offset = 90;
-  } else if (offset >= 135 && offset < 225) {
-    offset = 180;
-  } else {
-    offset = 270;
+  sensor.takeMeasurementsWithBulb();
+  Serial.print("ratio: ");
+  double blue = sensor.getCalibratedBlue();
+  double red = sensor.getCalibratedRed();
+  Serial.println(blue / red);
+  if ((double)sensor.getCalibratedBlue() / (double)sensor.getCalibratedRed() > 5) {
+    stopMotors();
+    digitalWrite(29, HIGH);
+    delay(6000);
   }
-  straightDrive(30, 150, 2, 60);
 
-#endif
+  // dropRescueKitRight();
 }
 
 bool turnCenterCheck() {
@@ -383,7 +359,7 @@ void straightDrive(int cm, int speed, int tolerance, int milDist) {
 
   while (abs(motorL.getEncoders()) < abs(encoders) && abs(motorR.getEncoders()) < abs(encoders) && tof.readRangeSingleMillimeters() > 50 && seenBlack == false) {
 
-
+    bno.getEvent(&bnoInfo, Adafruit_BNO055::VECTOR_EULER);
     if (abs(offset - bnoInfo.orientation.x) > 180) {
       p_turn = offset - bnoInfo.orientation.x + 360;
     } else {
@@ -404,8 +380,23 @@ void straightDrive(int cm, int speed, int tolerance, int milDist) {
       stopMotors();
       delay(1000);
       seenBlack = true;
-    } else {
-      forward(50 + p_turn * KP_STRAIGHTEN, 50 - p_turn * KP_STRAIGHTEN);
+    }
+    if (!seenBlack) {
+      bno.getEvent(&bnoInfo, Adafruit_BNO055::VECTOR_EULER);
+      Serial.println(bnoInfo.orientation.z);
+      if (bnoInfo.orientation.z > 3) {
+        while (bnoInfo.orientation.z > 3) {
+          bno.getEvent(&bnoInfo, Adafruit_BNO055::VECTOR_EULER);
+          forward(255, 255);
+        }
+      } else if (bnoInfo.orientation.z < -3) {
+        while (bnoInfo.orientation.z < -3) {
+          bno.getEvent(&bnoInfo, Adafruit_BNO055::VECTOR_EULER);
+          forward(40, 40);
+        }
+      } else {
+        forward(50 + p_turn * KP_STRAIGHTEN, 50 - p_turn * KP_STRAIGHTEN);
+      }
     }
     /*
     bno.getEvent(&bnoInfo, Adafruit_BNO055::VECTOR_EULER);
@@ -440,23 +431,23 @@ void straightDrive(int cm, int speed, int tolerance, int milDist) {
   if (seenBlack) {
     stopMotors();
     Serial.println(motorL.getEncoders());
-      while(abs(motorL.getEncoders()) > 5) {
-        Serial.println(motorL.getEncoders());
-        forward(-100);
-      }
-      stopMotors();
-      goodSpinLeft(180);
-      offset = bnoInfo.orientation.x;
-      offset = bnoInfo.orientation.x;
-      if (offset > 315 || offset < 45) {
-        offset = 0;
-      } else if (offset >= 45 && offset < 135) {
-        offset = 90;
-      } else if (offset >= 135 && offset < 225) {
-        offset = 180;
-      } else {
-        offset = 270;
-      }
-     }
-    // utils::stopMotors();
+    while (abs(motorL.getEncoders()) > 5) {
+      Serial.println(motorL.getEncoders());
+      forward(-100);
+    }
+    stopMotors();
+    goodSpinLeft(180);
+    offset = bnoInfo.orientation.x;
+    offset = bnoInfo.orientation.x;
+    if (offset > 315 || offset < 45) {
+      offset = 0;
+    } else if (offset >= 45 && offset < 135) {
+      offset = 90;
+    } else if (offset >= 135 && offset < 225) {
+      offset = 180;
+    } else {
+      offset = 270;
+    }
   }
+  // utils::stopMotors();
+}
